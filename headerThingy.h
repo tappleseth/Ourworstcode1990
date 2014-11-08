@@ -10,23 +10,45 @@
 //PRIMITIVE TYPE DEFINITION
 typedef enum {FALSE = 0, TRUE = 1} bool;
 
+typedef struct {
+  void (*justTrainTaskThings)(void*,void*);
+  void* localDataPtr;
+  void* globalDataPtr;
+  void* next;
+  void* previous;
+} boringTom;
+
+static boringTom* head;
+static boringTom* current;
+
+
 //FUNCTION PROTOTYPES
 void Startup(void);
-void Schedule(void* localData, void* sharedData);
-void TrainCom(void* localData, void* sharedData);
-void CurrentTrain(void* localData, void* sharedData);
-void SwitchControl(void* localData, void* sharedData);
-void SerialCommunications(void* localData, void* sharedData);
+void Schedule(void* data);
+void TrainCom(void* data);
+void CurrentTrain(void*, void*);
+void SwitchControl(void* data);
+void SerialCommunications(void* data);
 
-void NorthTrain(void* localData, void* sharedData);
-void EastTrain(void* localData, void* sharedData);
-void WestTrain(void* localData, void* sharedData);
+void addToStack(boringTom* addMe);
+int getStackSize(void);
+void popFromStack(void);
+
+void NorthTrain(void* data);
+void EastTrain(void* data);
+void WestTrain(void* data);
+void TomSchedule(void);
+void NuTrainCom(void* localData, void* globalData);
+void CurrentTrain(void* localData, void* globalData);
+void NuSwitchControl(void* localData, void* globalData);
+void SerialComTask(void* localData, void* globalData);
 //END FUNCTION PROTOTYPES
 
 //GLOBAL VARIABLE DECLARATIONS
 static bool north;
 static bool east;
 static bool west;
+static bool south;
 
 static bool toggleNorth;
 static bool toggleEast;
@@ -40,25 +62,24 @@ static unsigned int traversalTime;
 static unsigned int startTime;
 
 static int seed;
+
+
 //END GLOBAL VARIABLE DECLARATIONS
 
 //STRUCT DEFINITIONS
-typedef struct {
-  void (*justTrainTaskThings)(void*, void*);
-  void* globalDataPtr;
-  void* localDataPtr;
-} TCB;
+
 
 typedef struct {  
   bool* north;
   bool* east;
   bool* west;
+  bool* south;
   bool* gridlock;
   bool* trainPresent;  
   unsigned int* globalCount;
   unsigned int* trainSize;
   unsigned int* traversalTime;
-  unsigned int* startTime;  
+  unsigned int* startTime;
 } globalData;
 
 typedef struct {  
@@ -66,17 +87,34 @@ typedef struct {
 } scheduleData;
 
 typedef struct {
-  bool* data;
+  bool* north;
+  bool* east;
+  bool* west;
+  bool* gridlock;
+  bool* trainPresent;  
+  unsigned int* trainSize;
+  unsigned int* globalCount;
 } trainComData;
 
 typedef struct {
-  bool* toggleNorth;  
-  bool* toggleWest;  
-  bool* toggleEast;  
+  bool* data;
+  bool* north;
+  bool* south;
+  bool* west;
+  bool* east;
+  bool* toggle;
 } currentTrainData;
 
 typedef struct {
-  bool* data;
+  bool* north;
+  bool* east;
+  bool* west;
+  bool* gridlock;
+  bool* trainPresent;
+  unsigned int* trainSize;
+  unsigned int* globalCount;
+  unsigned int* traversalTime;
+  unsigned int* startTime;
 } switchControlData;
 
 typedef struct {
@@ -84,14 +122,24 @@ typedef struct {
 } serialCommunicationsData;
 
 typedef struct {
-  bool* toggleNorth; 
+  bool* toggleNorth;  
+  bool* north;
+  unsigned int* globalCount;
+  unsigned int* traversalTime;
 } northTrainData;
 
 typedef struct {
-  bool* toggleWest; 
+  bool* toggleWest;  
+  bool* west;
+  unsigned int* globalCount;
+  unsigned int* traversalTime;
 } westTrainData;
 
 typedef struct {
-  bool* toggleEast; 
+  bool* toggleEast;
+  bool* east;
+  unsigned int* globalCount;
+  unsigned int* traversalTime;
 } eastTrainData;
+
 //END STRUCT DEFINITIONS
