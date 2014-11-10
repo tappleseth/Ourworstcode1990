@@ -25,7 +25,6 @@ void Delay(int* foolioJenkins);
 void pin(bool);
 void IntGPIOe(void);
 void TomSchedule(void);
-unsigned int State = 0;
 
 int main(){
   Startup();
@@ -90,7 +89,7 @@ void Startup(void) {
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
   GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA); 
   
-  State = 0;
+  TimerState = 0;
   
   // Set the clocking to run directly from the crystal.
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
@@ -102,35 +101,19 @@ void Startup(void) {
   
   //Enable GPIO port E, set pin 0 as an input
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);    
-  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0);
+  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, 0xF);
   
   //Activate the pull-up on GPIO port E
-  GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_0, GPIO_STRENGTH_2MA,
+  GPIOPadConfigSet(GPIO_PORTE_BASE, 0xF, GPIO_STRENGTH_2MA,
                    GPIO_PIN_TYPE_STD_WPU);
   
   //Configure GPIO port E as triggering on falling edges
-  GPIOIntTypeSet(GPIO_PORTE_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
+  GPIOIntTypeSet(GPIO_PORTE_BASE, 0xF, GPIO_FALLING_EDGE);
   
   //Enable interrupts for GPIO port E
-  GPIOPinIntEnable(GPIO_PORTE_BASE, GPIO_PIN_0);
+  GPIOPinIntEnable(GPIO_PORTE_BASE, 0xF);
   IntEnable(INT_GPIOE);
-  
-  north = FALSE;
-  east = FALSE;
-  west = FALSE;
-  
-  toggleNorth = FALSE;
-  toggleEast = FALSE;
-  toggleWest = FALSE;
-  
-  gridlock = FALSE;
-  trainPresent = FALSE;
-  trainSize = 2;
-  globalCount = 0;
-  traversalTime = 0;
-  startTime = 0;
-  
-  seed = 1;
+
   
   return;
 }
@@ -144,9 +127,12 @@ void TomSchedule(){
   eastTrainData ourEastTrainData;
   switchControlData ourSwitchControlData;
   scheduleData ourScheduleData;
+  currentTrainData ourCurrentTrainData;
   
- globalData ourGlobalData;
+  globalData ourGlobalData;
   ourGlobalData.east = FALSE;
+  ourGlobalData.stateTom = 0;
+  ourGlobalData.fromDirection = 0; 
   ourGlobalData.globalCount = 0;
   ourGlobalData.gridlock = FALSE;
   ourGlobalData.north = FALSE;
@@ -155,6 +141,10 @@ void TomSchedule(){
   ourGlobalData.trainSize = 0;
   ourGlobalData.traversalTime = 0;
   ourGlobalData.west = FALSE;
+  ourGlobalData.currentTrainComplete = FALSE;
+  ourGlobalData.switchConComplete = FALSE;
+  ourGlobalData.trainComComplete = FALSE;
+  
   
   //data struct fields
   ourTrainComData.east = &east;
@@ -164,20 +154,6 @@ void TomSchedule(){
   ourTrainComData.trainPresent = &trainPresent;
   ourTrainComData.gridlock = &gridlock;
   
-  ourNorthTrainData.globalCount = &globalCount;
-  ourNorthTrainData.north = &north;
-  ourNorthTrainData.traversalTime = &traversalTime;
-  ourNorthTrainData.toggleNorth = &toggleNorth;
-  
-  ourWestTrainData.globalCount = &globalCount;
-  ourWestTrainData.west = &west;
-  ourWestTrainData.traversalTime = &traversalTime;
-  ourWestTrainData.toggleWest = &toggleWest;
-  
-  ourEastTrainData.globalCount = &globalCount;  
-  ourEastTrainData.east = &east;
-  ourEastTrainData.traversalTime = &traversalTime;
-  ourEastTrainData.toggleEast = &toggleEast;
   
   ourSwitchControlData.east = &east;
   ourSwitchControlData.globalCount = &globalCount;
@@ -216,59 +192,19 @@ void TomSchedule(){
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
  static int checkSize = 0;
+ 
   while(1){
     checkSize = getStackSize();
     if (checkSize==0){
       RIT128x96x4StringDraw("Justin is an abomination \0", 10, 40, 15);
+
     } else {
       RIT128x96x4StringDraw((char*)checkSize, 10, 40, 15);
     }
   
 }
 }
-void TrainCom(void* data) {
-#if TASK_SELECT == 0 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  int direction;
-  trainComData* ptr = (trainComData*)data;
-  static int brightness;
-  
-  //Preparing a trainSize in preparation for switchControl
-  //(when switchControl decides there is a train, it will use this size)
-  if (!*ptr->trainPresent && !*ptr->gridlock) {
-    *ptr->trainSize = randomInteger(2, 9);
-    brightness = 15;
-  }
-  
-  if(*ptr->gridlock)
-    brightness = 0;
-  
-  char numCars[] = {(char)(48 + *ptr->trainSize), '\0'};
-  RIT128x96x4StringDraw("Cars: \0", 10, 50, brightness);
-  RIT128x96x4StringDraw(numCars, 50, 50, brightness);
-  
-  if (*ptr->trainPresent && !*ptr->east && !*ptr->west && !*ptr->north) {
-    direction = randomInteger(0, 2);
-    
-    if(direction == 1) {
-      *ptr->east = TRUE;
-      *ptr->north = FALSE;    
-      *ptr->west = FALSE;
-    }
-    else if(direction == 2) {
-      *ptr->east = FALSE;
-      *ptr->north = TRUE;    
-      *ptr->west = FALSE;
-    }
-    else {
-      *ptr->east = FALSE;
-      *ptr->north = FALSE;    
-      *ptr->west = TRUE;
-    }    
-  }
-  
+ 
 #if TASK_SELECT == 0 || TASK_SELECT == -1
   pin(LOW);
 #endif
@@ -338,315 +274,6 @@ void SwitchControl(void* data) {
   return;
 }
 
-void Schedule(void* data) {
-#if TASK_SELECT == 5 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  static unsigned int justinCrazy;
-  static char globalCountArray[10];
-  
-  for (int tibo = 0; tibo < 10; tibo++)
-    globalCountArray[tibo] = ' ';
-  
-  scheduleData* tomPtr = (scheduleData*) data; 
-  
-  while(State == 0) {
-    
-  }
-  
-  State = 0;
-  
-  justinCrazy = *tomPtr->globalCount;
-  justinCrazy++;
-  *tomPtr->globalCount = justinCrazy;
-  char scheduleTitle[] = "TOM TIME: \0";
-  RIT128x96x4StringDraw(scheduleTitle, 0, 75, 15);
-  
-  int i = 9; 
-  
-  while(justinCrazy > 0) {
-    globalCountArray[i] = (justinCrazy%10) + 48;
-    justinCrazy = justinCrazy/10;
-    i--;     
-  }
-  
-  RIT128x96x4StringDraw(globalCountArray, 50, 75, 15);
-  
-#if TASK_SELECT == 5 || TASK_SELECT == -1
-  pin(LOW);
-#endif
-  
-  return;
-}
-
-void NorthTrain(void* data) {
-#if TASK_SELECT == 2 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  northTrainData* ptr = (northTrainData*)data;
-  static unsigned int noiseCount = 0;
-  static unsigned int northFlashCount = 0;  
-  static char northDisplay[] = "NorthTrain \0";
-  static int brightness = 15;
-  
-  if(*ptr->north) {
-    if(!*ptr->toggleNorth){
-      *ptr->toggleNorth = TRUE;
-      noiseCount = *ptr->globalCount + 60;
-      northFlashCount = *ptr->globalCount;
-      brightness = 15;
-    }
-    
-    if(*ptr->toggleNorth) {
-      //FLASH EVENTS
-      //loops indefinitely (will end when train passes)
-      if((*ptr->globalCount - northFlashCount) % 18 == 0)
-        brightness = 15; 
-      
-      if((*ptr->globalCount - northFlashCount) % 18 == 9)
-        brightness = 0;
-      
-      RIT128x96x4StringDraw(northDisplay, 10, 40, brightness); 
-      //END FLASH EVENTS
-      
-      //SOUND EVENTS
-#if SOUND_ENABLE == 1
-      //first blast: lasts 2 seconds
-      if(*ptr->globalCount == (noiseCount - 60))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //off time between first and second blast
-      if(*ptr->globalCount == (noiseCount - 48))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start second blast
-      if(*ptr->globalCount == (noiseCount - 42))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait two seconds, stop second blast
-      if(*ptr->globalCount == (noiseCount - 30))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start first short blast
-      if(*ptr->globalCount == (noiseCount - 24))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait one second, then stop first short blast
-      if(*ptr->globalCount == (noiseCount - 18))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start second short blast
-      if(*ptr->globalCount == (noiseCount - 12))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait one second, end all blasts, set bigglesOn to FALSE
-      if(*ptr->globalCount == (noiseCount - 6))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      if(noiseCount == *ptr->globalCount) {
-        noiseCount = *ptr->globalCount + 60;
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      }      
-#endif
-    }
-  }
-  
-  //placeholder: need code to STOP SOME SHIT
-  if(*ptr->globalCount >= *ptr->traversalTime) {
-    PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-    noiseCount = 0;
-    northFlashCount = 0;
-    brightness = 15;
-    *ptr->toggleNorth = FALSE;
-    RIT128x96x4StringDraw(northDisplay, 10, 40, 0);
-  }
-  
-#if TASK_SELECT == 2 || TASK_SELECT == -1
-  pin(LOW); 
-#endif
-  
-  return;
-}
-
-void WestTrain(void* data) {
-#if TASK_SELECT == 3 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  westTrainData* ptr = (westTrainData*)data;  
-  static unsigned int westNoiseCount = 0;
-  static unsigned int westFlashCount = 0;
-  static char westDisplay[] = "WestTrain \0";
-  static int brightness = 15;  
-  
-  if(*ptr->west) {
-    if(!*ptr->toggleWest) {
-      *ptr->toggleWest = TRUE;
-      westNoiseCount = *ptr->globalCount + 42;
-      westFlashCount = *ptr->globalCount;
-      brightness = 15;
-    }
-    
-    //FLASH EVENTS
-    if(*ptr->toggleWest) {
-      if ((*ptr->globalCount - westFlashCount) % 24 == 0)
-        brightness = 15; 
-      
-      if ((*ptr->globalCount - westFlashCount) % 24 == 12)
-        brightness = 0;
-      
-      RIT128x96x4StringDraw(westDisplay, 10, 40, brightness); 
-      
-      //SOUND EVENTS
-#if SOUND_ENABLE == 1      
-      //first blast: lasts 2 seconds
-      if(*ptr->globalCount == (westNoiseCount - 42))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //off time between first and second blast
-      if(*ptr->globalCount == (westNoiseCount - 30))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start second blast
-      if(*ptr->globalCount == (westNoiseCount - 24))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait two seconds, stop second blast
-      if(*ptr->globalCount == (westNoiseCount - 18))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start first short blast
-      if(*ptr->globalCount == (westNoiseCount - 12))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait one second, then stop first short blast
-      if(*ptr->globalCount == (westNoiseCount - 6))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);    
-      
-      if(westNoiseCount == *ptr->globalCount) {
-        westNoiseCount = *ptr->globalCount + 42;
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      }
-#endif
-    }
-  }
-  
-  if(*ptr->globalCount >= *ptr->traversalTime) {
-    PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-    westNoiseCount = 0;
-    westFlashCount = 0;
-    brightness = 15;
-    *ptr->toggleWest = FALSE;
-    RIT128x96x4StringDraw(westDisplay, 10, 40, 0);
-  }
-  
-#if TASK_SELECT == 3 || TASK_SELECT == -1
-  pin(LOW);
-#endif
-  
-  return;
-}
-
-void EastTrain(void* data) {
-#if TASK_SELECT == 4 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  eastTrainData* ptr = (eastTrainData*)data;  
-  static unsigned int eastNoiseCount = 0;
-  static unsigned int eastFlashCount = 0;
-  static char eastDisplay[] = "EastTrain \0";
-  static int brightness = 15;
-  
-  if(*ptr->east) {
-    if(!*ptr->toggleEast) {
-      *ptr->toggleEast = TRUE;
-      eastNoiseCount = *ptr->globalCount + 78;
-      eastFlashCount = *ptr->globalCount;
-      brightness = 15;
-    }
-    
-    //*****FLASH EVENTS*****  
-    
-    if(*ptr->toggleEast) {
-      //FLASH OFF
-      
-      if ((*ptr->globalCount - eastFlashCount) % 12 == 0)
-        brightness = 15; 
-      
-      if ((*ptr->globalCount - eastFlashCount) % 12 == 6)
-        brightness = 0;
-      
-      RIT128x96x4StringDraw(eastDisplay, 10, 40, brightness); 
-      
-      //*****SOUND EVENTS*****
-#if SOUND_ENABLE == 1
-      //first blast: lasts 2 seconds
-      if(*ptr->globalCount == (eastNoiseCount - 78)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //off time between first and second blast
-      if(*ptr->globalCount == (eastNoiseCount - 66)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start second blast
-      if(*ptr->globalCount == (eastNoiseCount - 60)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait two seconds, stop second blast
-      if(*ptr->globalCount == (eastNoiseCount - 48)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start first short blast
-      if(*ptr->globalCount == (eastNoiseCount - 42)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait one second, then stop first short blast
-      if(*ptr->globalCount == (eastNoiseCount - 30)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //first blast: lasts 2 seconds
-      if(*ptr->globalCount == (eastNoiseCount - 24)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //off time between first and second blast
-      if(*ptr->globalCount == (eastNoiseCount - 18)) 
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      //wait one second, then start second blast
-      if(*ptr->globalCount == (eastNoiseCount - 12))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      
-      //wait two seconds, stop second blast
-      if(*ptr->globalCount == (eastNoiseCount - 6))
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      
-      if(eastNoiseCount == *ptr->globalCount) {
-        eastNoiseCount = *ptr->globalCount + 78;
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
-      }
-#endif
-    }   
-  }
-  
-  if(*ptr->globalCount >= *ptr->traversalTime) {
-    PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-    eastNoiseCount = 0;
-    eastFlashCount = 0;
-    brightness = 15;
-    *ptr->toggleEast = FALSE;
-    RIT128x96x4StringDraw(eastDisplay, 10, 40, 0);
-  }
-  
-#if TASK_SELECT == 4 || TASK_SELECT == -1
-  pin(LOW);
-#endif
-  
-  return;
-}
-
 int randomInteger(int low, int high) {
   double randNum = 0.0;
   int multiplier = 2743;
@@ -687,7 +314,7 @@ void IntTimer0(void) {
   //Clear the interrupt to avoid continuously looping here
   TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
   
-  State = 1;
+  TimerState = 1;
   
   return;
 }
@@ -696,11 +323,11 @@ void IntTimer0(void) {
 void IntGPIOe(void)
 {
   //Clear the interrupt to avoid continuously looping here
-  GPIOPinIntClear(GPIO_PORTE_BASE, GPIO_PIN_0);
+  GPIOPinIntClear(GPIO_PORTE_BASE, 0xF);
   
   //Set the Event State for GPIO pin 0
-  State=GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0);
+  TrainState=GPIOPinRead(GPIO_PORTE_BASE, 0xF);
   
   //Switches are normally-high, so flip the polarity of the results:
-  State=~State;  //You should work out why and how this works!
+  TrainState=TrainState^0xF;  //You should work out why and how this works!
 }
