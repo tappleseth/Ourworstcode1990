@@ -18,8 +18,13 @@ void CurrentTrain(void* localData, void* sharedData){
   //produce OLED/audio alarms
   //remove from task queue if no train is present
   globalData* globalPtr = (globalData*)sharedData;    
-  northTrainData* localPtr = (northTrainData*)localData;
-  //North Train
+  currentTrainData* localPtr = (currentTrainData*)localData;
+  /*
+  
+  NORTH TRAIN
+  
+  */
+  
   if(north == TRUE) {
     #if TASK_SELECT == 2 || TASK_SELECT == -1
     pin(HIGH);
@@ -32,21 +37,21 @@ void CurrentTrain(void* localData, void* sharedData){
   static char northDisplay[] = "NorthTrain \0";
   static int brightness = 15;
   
-  if(*globalPtr->north) {
-    if(!*localPtr->toggleNorth){
-      *localPtr->toggleNorth = TRUE;
-      noiseCount = *globalPtr->globalCount + 60;
-      northFlashCount = *globalPtr->globalCount;
+  if(globalPtr.north) {
+    if(!localPtr.toggleNorth){
+      localPtr.toggleNorth = TRUE;
+      noiseCount = globalPtr.globalCount + 60;
+      northFlashCount = globalPtr.globalCount;
       brightness = 15;
     }
     
     if(*localPtr->toggleNorth) {
       //FLASH EVENTS
       //loops indefinitely (will end when train passes)
-      if((*globalPtr->globalCount - northFlashCount) % 18 == 0)
+      if((globalPtr.globalCount - northFlashCount) % 18 == 0)
         brightness = 15; 
       
-      if((*globalPtr->globalCount - northFlashCount) % 18 == 9)
+      if((globalPtr.globalCount - northFlashCount) % 18 == 9)
         brightness = 0;
       
       RIT128x96x4StringDraw(northDisplay, 10, 40, brightness); 
@@ -55,39 +60,39 @@ void CurrentTrain(void* localData, void* sharedData){
       //SOUND EVENTS
       #if SOUND_ENABLE == 1
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (noiseCount - 60))
+        if(globalPtr.globalCount == (noiseCount - 60))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (noiseCount - 48))
+        if(globalPtr.globalCount == (noiseCount - 48))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (noiseCount - 42))
+        if(globalPtr.globalCount == (noiseCount - 42))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (noiseCount - 30))
+        if(globalPtr.globalCount == (noiseCount - 30))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start first short blast
-        if(*globalPtr->globalCount == (noiseCount - 24))
+        if(globalPtr.globalCount == (noiseCount - 24))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait one second, then stop first short blast
-        if(*globalPtr->globalCount == (noiseCount - 18))
+        if(globalPtr.globalCount == (noiseCount - 18))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second short blast
-        if(*globalPtr->globalCount == (noiseCount - 12))
+        if(globalPtr.globalCount == (noiseCount - 12))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait one second, end all blasts, set bigglesOn to FALSE
-        if(*globalPtr->globalCount == (noiseCount - 6))
+        if(globalPtr.globalCount == (noiseCount - 6))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
-        if(noiseCount == *globalPtr->globalCount) {
-          noiseCount = *globalPtr->globalCount + 60;
+        if(noiseCount == globalPtr.globalCount) {
+          noiseCount = globalPtr.globalCount + 60;
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         }      
       #endif
@@ -95,12 +100,12 @@ void CurrentTrain(void* localData, void* sharedData){
   }
   
   //placeholder: need code to STOP SOME SHIT
-  if(*globalPtr->globalCount >= *globalPtr->traversalTime) {
+  if(globalPtr.globalCount >= globalPtr.traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
     noiseCount = 0;
     northFlashCount = 0;
     brightness = 15;
-    *localPtr->toggleNorth = FALSE;
+    localPtr.toggleNorth = FALSE;
     RIT128x96x4StringDraw(northDisplay, 10, 40, 0);
   }
   
@@ -109,37 +114,40 @@ void CurrentTrain(void* localData, void* sharedData){
   #endif    
   }
   
-  //East Train
+  /*
+  
+  EAST TRAIN
+  
+  */
+  
   if(east == TRUE) {
     #if TASK_SELECT == 4 || TASK_SELECT == -1
     pin(HIGH);
   #endif
-    
-  globalData* globalPtr = (globalData*)sharedData;  
-  eastTrainData* localPtr = (eastTrainData*)localData;  
+   
   
   static unsigned int eastNoiseCount = 0;
   static unsigned int eastFlashCount = 0;
   static char eastDisplay[] = "EastTrain \0";
   static int brightness = 15;
   
-  if(*globalPtr->east) {
-    if(!*localPtr->toggleEast) {
-      *localPtr->toggleEast = TRUE;
-      eastNoiseCount = *globalPtr->globalCount + 78;
-      eastFlashCount = *globalPtr->globalCount;
+  if(globalPtr.east) {
+    if(!localPtr.toggleEast) {
+      localPtr.toggleEast = TRUE;
+      eastNoiseCount = globalPtr.globalCount + 78;
+      eastFlashCount = globalPtr.globalCount;
       brightness = 15;
     }
     
     //*****FLASH EVENTS*****  
     
-    if(*localPtr->toggleEast) {
+    if(localPtr.toggleEast) {
       //FLASH OFF
       
-      if ((*globalPtr->globalCount - eastFlashCount) % 12 == 0)
+      if ((globalPtr.globalCount - eastFlashCount) % 12 == 0)
         brightness = 15; 
       
-      if ((*globalPtr->globalCount - eastFlashCount) % 12 == 6)
+      if ((globalPtr.globalCount - eastFlashCount) % 12 == 6)
         brightness = 0;
       
       RIT128x96x4StringDraw(eastDisplay, 10, 40, brightness); 
@@ -147,59 +155,59 @@ void CurrentTrain(void* localData, void* sharedData){
       //*****SOUND EVENTS*****
       #if SOUND_ENABLE == 1
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (eastNoiseCount - 78)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 78)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 66)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 66)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 60)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 60)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 48)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 48)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start first short blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 42)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 42)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait one second, then stop first short blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 30)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 30)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (eastNoiseCount - 24)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 24)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 18)) 
+        if(globalPtr.globalCount == (eastNoiseCount - 18)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 12))
+        if(globalPtr.globalCount == (eastNoiseCount - 12))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (eastNoiseCount - 6))
+        if(globalPtr.globalCount == (eastNoiseCount - 6))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
-        if(eastNoiseCount == *globalPtr->globalCount) {
-          eastNoiseCount = *globalPtr->globalCount + 78;
+        if(eastNoiseCount == globalPtr.globalCount) {
+          eastNoiseCount = globalPtr.globalCount + 78;
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         }
       #endif
     }   
   }
   
-  if(*globalPtr->globalCount >= *globalPtr->traversalTime) {
+  if(globalPtr.globalCount >= globalPtr.traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
     eastNoiseCount = 0;
     eastFlashCount = 0;
     brightness = 15;
-    *localPtr->toggleEast = FALSE;
+    localPtr.toggleEast = FALSE;
     RIT128x96x4StringDraw(eastDisplay, 10, 40, 0);
   }
 
@@ -208,34 +216,37 @@ void CurrentTrain(void* localData, void* sharedData){
   #endif    
   }
   
-  //West Train
+  /*
+  
+  WEST TRAIN
+  
+  */
+  
   if(west == TRUE) {
     #if TASK_SELECT == 3 || TASK_SELECT == -1
     pin(HIGH);
   #endif
 
-  globalData* globalPtr = (globalData*)sharedData;
-  westTrainData* localPtr = (westTrainData*)localData;  
   
   static unsigned int westNoiseCount = 0;
   static unsigned int westFlashCount = 0;
   static char westDisplay[] = "WestTrain \0";
   static int brightness = 15;  
   
-  if(*globalPtr->west) {
-    if(!*localPtr->toggleWest) {
-      *localPtr->toggleWest = TRUE;
-      westNoiseCount = *globalPtr->globalCount + 42;
-      westFlashCount = *globalPtr->globalCount;
+  if(globalPtr.west) {
+    if(!localPtr.toggleWest) {
+      localPtr.toggleWest = TRUE;
+      westNoiseCount = globalPtr.globalCount + 42;
+      westFlashCount = globalPtr.globalCount;
       brightness = 15;
     }
     
     //FLASH EVENTS
-    if(*localPtr->toggleWest) {
-      if ((*globalPtr->globalCount - westFlashCount) % 24 == 0)
+    if(localPtr.toggleWest) {
+      if ((globalPtr.globalCount - westFlashCount) % 24 == 0)
         brightness = 15; 
       
-      if ((*globalPtr->globalCount - westFlashCount) % 24 == 12)
+      if ((globalPtr.globalCount - westFlashCount) % 24 == 12)
         brightness = 0;
       
       RIT128x96x4StringDraw(westDisplay, 10, 40, brightness); 
@@ -243,43 +254,43 @@ void CurrentTrain(void* localData, void* sharedData){
       //SOUND EVENTS
       #if SOUND_ENABLE == 1      
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (westNoiseCount - 42))
+        if(globalPtr.globalCount == (westNoiseCount - 42))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (westNoiseCount - 30))
+        if(globalPtr.globalCount == (westNoiseCount - 30))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (westNoiseCount - 24))
+        if(globalPtr.globalCount == (westNoiseCount - 24))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (westNoiseCount - 18))
+        if(globalPtr.globalCount == (westNoiseCount - 18))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start first short blast
-        if(*globalPtr->globalCount == (westNoiseCount - 12))
+        if(globalPtr.globalCount == (westNoiseCount - 12))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait one second, then stop first short blast
-        if(*globalPtr->globalCount == (westNoiseCount - 6))
+        if(globalPtr.globalCount == (westNoiseCount - 6))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);    
         
-        if(westNoiseCount == *globalPtr->globalCount) {
-          westNoiseCount = *globalPtr->globalCount + 42;
+        if(westNoiseCount == globalPtr.globalCount) {
+          westNoiseCount = globalPtr.globalCount + 42;
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         }
       #endif
     }
   }
   
-  if(*globalPtr->globalCount >= *globalPtr->traversalTime) {
+  if(globalPtr.globalCount >= globalPtr.traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
     westNoiseCount = 0;
     westFlashCount = 0;
     brightness = 15;
-    *localPtr->toggleWest = FALSE;
+    localPtr.toggleWest = FALSE;
     RIT128x96x4StringDraw(westDisplay, 10, 40, 0);
   }
   
@@ -288,37 +299,39 @@ void CurrentTrain(void* localData, void* sharedData){
   #endif    
   }
   
-  //South Train
+  /*
+  
+  SOUTH TRAIN
+  
+  */
+  
   if(south == TRUE) {
     #if TASK_SELECT == 5 || TASK_SELECT == -1
     pin(HIGH);
   #endif
-    
-  globalData* globalPtr = (globalData*)sharedData;  
-  currentTrainData* localPtr = (currentTrainData;*)localData;  
-  
+     
   static unsigned int southNoiseCount = 0;
   static unsigned int southFlashCount = 0;
   static char southDisplay[] = "SouthTrain \0";
   static int brightness = 15;
   
-  if(*globalPtr->south) {
-    if(!*localPtr->toggleSouth) {
-      *localPtr->toggleSouth = TRUE;
-      southNoiseCount = *globalPtr->globalCount + 72;
-      southFlashCount = *globalPtr->globalCount;
+  if(globalPtr.south) {
+    if(!localPtr.toggleSouth) {
+      localPtr.toggleSouth = TRUE;
+      southNoiseCount = globalPtr.globalCount + 72;
+      southFlashCount = globalPtr.globalCount;
       brightness = 15;
     }
     
     //*****FLASH EVENTS*****  
     
-    if(*localPtr->toggleSouth) {
+    if(localPtr.toggleSouth) {
       //FLASH OFF
       
-      if ((*globalPtr->globalCount - southFlashCount) % 12 == 0)
+      if ((globalPtr.globalCount - southFlashCount) % 12 == 0)
         brightness = 15;
       
-      if ((*globalPtr->globalCount - southFlashCount) % 12 == 6)
+      if ((globalPtr.globalCount - southFlashCount) % 12 == 6)
         brightness = 0;
       
       RIT128x96x4StringDraw(southDisplay, 10, 40, brightness); 
@@ -326,59 +339,59 @@ void CurrentTrain(void* localData, void* sharedData){
       //*****SOUND EVENTS*****
       #if SOUND_ENABLE == 1
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (southNoiseCount - 72)) 
+        if(globalPtr.globalCount == (southNoiseCount - 72)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 60)) 
+        if(globalPtr.globalCount == (southNoiseCount - 60)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 54)) 
+        if(globalPtr.globalCount == (southNoiseCount - 54)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 42)) 
+        if(globalPtr.globalCount == (southNoiseCount - 42)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start first short blast
-        if(*globalPtr->globalCount == (southNoiseCount - 36)) 
+        if(globalPtr.globalCount == (southNoiseCount - 36)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait one second, then stop first short blast
-        if(*globalPtr->globalCount == (southNoiseCount - 30)) 
+        if(globalPtr.globalCount == (southNoiseCount - 30)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //first blast: lasts 2 seconds
-        if(*globalPtr->globalCount == (southNoiseCount - 24)) 
+        if(globalPtr.globalCount == (southNoiseCount - 24)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //off time between first and second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 18)) 
+        if(globalPtr.globalCount == (southNoiseCount - 18)) 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
         //wait one second, then start second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 12))
+        if(globalPtr.globalCount == (southNoiseCount - 12))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         
         //wait two seconds, stop second blast
-        if(*globalPtr->globalCount == (southNoiseCount - 6))
+        if(globalPtr.globalCount == (southNoiseCount - 6))
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
         
-        if(southNoiseCount == *globalPtr->globalCount) {
-          southNoiseCount = *globalPtr->globalCount + 72;
+        if(southNoiseCount == globalPtr.globalCount) {
+          southNoiseCount = globalPtr.globalCount + 72;
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
         }
       #endif
     }   
   }
   
-  if(*globalPtr->globalCount >= *globalPtr->traversalTime) {
+  if(globalPtr.globalCount >= globalPtr.traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
     southNoiseCount = 0;
     southFlashCount = 0;
     brightness = 15;
-    *localPtr->toggleSouth = FALSE;
+    localPtr.toggleSouth = FALSE;
     RIT128x96x4StringDraw(southDisplay, 10, 40, 0);
   }
 
