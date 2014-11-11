@@ -16,7 +16,11 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
-
+  boringTom* head;
+  boringTom* current;
+  unsigned int TrainState;
+  unsigned int TimerState;
+  unsigned int seed;
 
 int main(){
   Startup();
@@ -143,26 +147,27 @@ void TomSchedule(){
   trainComHell.justTrainTaskThings = NuTrainCom;
   trainComHell.localDataPtr = (void*)&ourTrainComData;
   trainComHell.globalDataPtr = (void*)&ourGlobalData;
+  trainComHell.next = NULL;
   
   currentTrainHell.justTrainTaskThings = CurrentTrain;
-  currentTrainHell.localDataPtr = (void*)&ourTrainComData;
+  currentTrainHell.localDataPtr = (void*)&ourCurrentTrainData;
   currentTrainHell.globalDataPtr = (void*)&ourGlobalData;
+  trainComHell.next = NULL;
   
   switchControlHell.justTrainTaskThings = NuSwitchControl;
   switchControlHell.localDataPtr = (void*)&ourSwitchControlData;
   switchControlHell.globalDataPtr = (void*)&ourGlobalData;
+  trainComHell.next = NULL;
   
   RIT128x96x4Init(1000000); 
   
-  boringTom* head; 
   head->next = NULL;
-  head->previous = NULL;
   
   static char flairTitle1[] = "Applehansontaft \0";
   static char flairTitle2[] = "Discount Freight \0";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
- static int checkSize = 0;
+ //static int checkSize = 0;
  
  
  /*typedef struct {
@@ -174,18 +179,38 @@ void TomSchedule(){
 } boringTom;
  */
  //build initial stack
- addToStack(&serialThingyHell);
+ //addToStack(&serialThingyHell);
  addToStack(&trainComHell);
   while(1){
   //traverse stack
     current = head;
+    if (ourGlobalData.trainComComplete==TRUE){
+    //if trainCom has done its job, pop trainCom and push SwitchCon and CurrentTrain
+    popFromStack(); 
+    addToStack(&switchControlHell);
+    addToStack(&currentTrainHell);
+    ourGlobalData.currentTrainComplete=FALSE;
+    }
+    //if switchCon says traversalTime is over with
+    if (ourGlobalData.switchConComplete==TRUE){
+      ourGlobalData.currentTrainComplete=FALSE; //reset for next time
+      popFromStack(); //remove switchCon
+    }
+    //if currentTrain says traversalTime is over with
+    if (ourGlobalData.currentTrainComplete==TRUE){
+      ourGlobalData.currentTrainComplete=FALSE; //reset for next time
+      popFromStack(); //remove currentTrain
+    }
     while (current != NULL){
       current->justTrainTaskThings(current->localDataPtr,current->globalDataPtr);
       current = current->next;
+      while (TimerState==0);
+      TimerState=0;
+      ourGlobalData.globalCount++;
     }
+   
 }
 
-return;
 }
 
 
