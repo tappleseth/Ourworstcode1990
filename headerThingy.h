@@ -1,13 +1,12 @@
 #ifndef HEADERTHINGY_H
 #define HEADERTHINGY_H
 
-
 #define MAX_QUEUE_LENGTH        6
 #define DELAY                   250000
 #define TASK_SELECT             2
 #define HIGH                    TRUE
 #define LOW                     FALSE
-#define SOUND_ENABLE            0
+#define SOUND_ENABLE            1
 
 #define PORT_DATA               (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)  // full 8 bits of port used
 
@@ -22,9 +21,8 @@ typedef struct {
   void* previous;
 } boringTom;
 
-static boringTom* head;
-static boringTom* current;
-
+extern boringTom* head;
+extern boringTom* current;
 
 //FUNCTION PROTOTYPES
 void Startup(void);
@@ -48,9 +46,9 @@ void IntGPIOe(void);
 
 //GLOBAL VARIABLE DECLARATIONS
 
-static unsigned int TrainState;
-static unsigned int TimerState;
-static unsigned int seed;
+extern unsigned int TrainState;
+extern unsigned int TimerState;
+extern unsigned int seed;
 
 
 //END GLOBAL VARIABLE DECLARATIONS
@@ -77,13 +75,7 @@ typedef struct {
 } globalData;
 
 typedef struct {
-  bool north;
-  bool east;
-  bool west;
-  bool  gridlock;
-  bool trainPresent;  
   unsigned int trainSize;
-  unsigned int globalCount;
 } trainComData;
 
 typedef struct {
