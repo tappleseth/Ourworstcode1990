@@ -16,11 +16,11 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
-  boringTom* head;
-  boringTom* current;
-  unsigned int TrainState;
-  unsigned int TimerState;
-  unsigned int seed;
+boringTom* head;
+boringTom* current;
+unsigned int TrainState = 0;
+unsigned int TimerState = 0;
+unsigned int seed = 0;
 
 int main(){
   Startup();
@@ -85,8 +85,6 @@ void Startup(void) {
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
   GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA); 
   
-  TimerState = 0;
-  
   // Set the clocking to run directly from the crystal.
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
                  SYSCTL_XTAL_8MHZ);
@@ -109,7 +107,7 @@ void Startup(void) {
   //Enable interrupts for GPIO port E
   GPIOPinIntEnable(GPIO_PORTE_BASE, 0xF);
   IntEnable(INT_GPIOE);
-
+  
   
   return;
 }
@@ -136,7 +134,7 @@ void TomSchedule(){
   ourGlobalData.currentTrainComplete = FALSE;
   ourGlobalData.switchConComplete = FALSE;
   ourGlobalData.trainComComplete = FALSE;
- 
+  
   
   //pointer structs
   boringTom trainComHell;
@@ -161,35 +159,37 @@ void TomSchedule(){
   
   RIT128x96x4Init(1000000); 
   
+  head = NULL;
   head->next = NULL;
   
   static char flairTitle1[] = "Applehansontaft \0";
   static char flairTitle2[] = "Discount Freight \0";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
- //static int checkSize = 0;
- 
- 
- /*typedef struct {
+  //static int checkSize = 0;
+  
+  
+  /*typedef struct {
   void (*justTrainTaskThings)(void*,void*);
   void* localDataPtr;
   void* globalDataPtr;
   void* next;
   void* previous;
 } boringTom;
- */
- //build initial stack
- //addToStack(&serialThingyHell);
- addToStack(&trainComHell);
+  */
+  //build initial stack
+  //addToStack(&serialThingyHell);
+ // int tomSux = 0;
+  addToStack(&trainComHell);
   while(1){
-  //traverse stack
+    //traverse stack
     current = head;
     if (ourGlobalData.trainComComplete==TRUE){
-    //if trainCom has done its job, pop trainCom and push SwitchCon and CurrentTrain
-    popFromStack(); 
-    addToStack(&switchControlHell);
-    addToStack(&currentTrainHell);
-    ourGlobalData.currentTrainComplete=FALSE;
+      //if trainCom has done its job, pop trainCom and push SwitchCon and CurrentTrain
+      popFromStack(); 
+      addToStack(&currentTrainHell);
+      addToStack(&switchControlHell);
+      ourGlobalData.currentTrainComplete=FALSE;
     }
     //if switchCon says traversalTime is over with
     if (ourGlobalData.switchConComplete==TRUE){
@@ -200,17 +200,21 @@ void TomSchedule(){
     if (ourGlobalData.currentTrainComplete==TRUE){
       ourGlobalData.currentTrainComplete=FALSE; //reset for next time
       popFromStack(); //remove currentTrain
+      addToStack(&trainComHell);
     }
     while (current != NULL){
       current->justTrainTaskThings(current->localDataPtr,current->globalDataPtr);
       current = current->next;
-      while (TimerState==0);
+      while (!TimerState) {
+        
+      }
       TimerState=0;
+      
       ourGlobalData.globalCount++;
     }
-   
-}
-
+    
+  }
+  
 }
 
 
