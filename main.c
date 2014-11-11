@@ -20,6 +20,8 @@ boringTom* head;
 boringTom* current;
 unsigned int TrainState = 0;
 unsigned int TimerState = 0;
+unsigned int tempCount = 0;
+unsigned int frequencyCount = 0;
 unsigned int seed = 0;
 
 int main(){
@@ -209,6 +211,8 @@ void TomSchedule(){
         
       }
       TimerState=0;
+      frequencyCount = tempCount;
+      //tempCount = 0;
       
       ourGlobalData.globalCount++;
     }
@@ -274,4 +278,7 @@ void IntGPIOe(void)
   
   //Switches are normally-high, so flip the polarity of the results:
   TrainState=TrainState^0xF;  //You should work out why and how this works!
+  
+  if(TrainState == 1)
+    tempCount++;
 }
