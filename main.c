@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "headerThingy.h"
-#include "proj3Stuff.c"
-#include "currentTrain.c"
 
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
@@ -19,12 +17,6 @@
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 
-void IntTimer0(void);
-int randomInteger(int a, int b);
-void Delay(int* foolioJenkins);
-void pin(bool);
-void IntGPIOe(void);
-void TomSchedule(void);
 
 int main(){
   Startup();
@@ -122,11 +114,7 @@ void TomSchedule(){
   
   //data structs
   trainComData ourTrainComData;
-  northTrainData ourNorthTrainData;
-  westTrainData ourWestTrainData;
-  eastTrainData ourEastTrainData;
   switchControlData ourSwitchControlData;
-  scheduleData ourScheduleData;
   currentTrainData ourCurrentTrainData;
   
   globalData ourGlobalData;
@@ -144,28 +132,7 @@ void TomSchedule(){
   ourGlobalData.currentTrainComplete = FALSE;
   ourGlobalData.switchConComplete = FALSE;
   ourGlobalData.trainComComplete = FALSE;
-  
-  
-  //data struct fields
-  ourTrainComData.east = &east;
-  ourTrainComData.north = &north;
-  ourTrainComData.west = &west;
-  ourTrainComData.trainSize = &trainSize;
-  ourTrainComData.trainPresent = &trainPresent;
-  ourTrainComData.gridlock = &gridlock;
-  
-  
-  ourSwitchControlData.east = &east;
-  ourSwitchControlData.globalCount = &globalCount;
-  ourSwitchControlData.gridlock = &gridlock;
-  ourSwitchControlData.north = &north;
-  ourSwitchControlData.startTime = &startTime;
-  ourSwitchControlData.trainPresent = &trainPresent;
-  ourSwitchControlData.trainSize = &trainSize;
-  ourSwitchControlData.traversalTime = &traversalTime;
-  ourSwitchControlData.west = &west;
-  
-  ourScheduleData.globalCount = &globalCount;
+ 
   
   //pointer structs
   boringTom trainComHell;
@@ -181,6 +148,10 @@ void TomSchedule(){
   currentTrainHell.localDataPtr = (void*)&ourTrainComData;
   currentTrainHell.globalDataPtr = (void*)&ourGlobalData;
   
+  switchControlHell.justTrainTaskThings = NuSwitchControl;
+  switchControlHell.localDataPtr = (void*)&ourSwitchControlData;
+  switchControlHell.globalDataPtr = (void*)&ourGlobalData;
+  
   RIT128x96x4Init(1000000); 
   
   boringTom* head; 
@@ -193,86 +164,26 @@ void TomSchedule(){
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
  static int checkSize = 0;
  
-  while(1){
-    checkSize = getStackSize();
-    if (checkSize==0){
-      RIT128x96x4StringDraw("Justin is an abomination \0", 10, 40, 15);
-
-    } else {
-      RIT128x96x4StringDraw((char*)checkSize, 10, 40, 15);
-    }
-  
-}
-}
  
-#if TASK_SELECT == 0 || TASK_SELECT == -1
-  pin(LOW);
-#endif
+ /*typedef struct {
+  void (*justTrainTaskThings)(void*,void*);
+  void* localDataPtr;
+  void* globalDataPtr;
+  void* next;
+  void* previous;
+} boringTom;
+ */
+ //build initial stack
+ addToStack(&serialThingyHell);
+ addToStack(&trainComHell);
+  while(1){
   
-  return;
+ 
 }
 
-void SwitchControl(void* data) {
-#if TASK_SELECT == 1 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
-  switchControlData* ptr = (switchControlData*)data;
-  static int rand = 0;
-  static char brando9k[] = "GRIDLOCK! \0";
-  static int brightness = 15;
-  
-  if(!*ptr->gridlock && !*ptr->trainPresent) {
-    //startTime is logged as whatever current globalCount value is
-    *ptr->startTime = *ptr->globalCount;
-    //generate a random number between -2 and 2
-    rand = randomInteger(-2, 2);
-    
-    //if random number is less than 0, we have GRIDLOCK!
-    if(rand < 0) {
-      *ptr->gridlock = TRUE;
-      *ptr->traversalTime = *ptr->globalCount + (-70*rand);
-    }
-    //if random number is greater than 0, we have a train passing through!
-    else {
-      *ptr->trainPresent = TRUE;
-      *ptr->traversalTime = 35*(*ptr->trainSize) + *ptr->globalCount;
-    }
-  }
-  //CASE 2
-  //gridlock is true
-  if(*ptr->gridlock) {
-    //if globalCount exceeds gridlock timer, end gridlock
-    if ((*ptr->globalCount - *ptr->traversalTime) % 6 == 0)
-      brightness = 15; 
-    
-    if ((*ptr->globalCount - *ptr->traversalTime) % 6 == 3)
-      brightness = 0;
-    
-    RIT128x96x4StringDraw(brando9k, 10, 40, brightness); 
-    
-    if(*ptr->globalCount >= *ptr->traversalTime)
-      *ptr->gridlock = FALSE;
-  }
-  
-  //CASE 3
-  //train is present
-  if(*ptr->trainPresent) {
-    if(*ptr->globalCount >= *ptr->traversalTime) {
-      //*ptr->trainSize = 0;
-      *ptr->trainPresent = FALSE;
-      *ptr->north = FALSE;
-      *ptr->east = FALSE;
-      *ptr->west = FALSE;
-    }
-  }
-  
-#if TASK_SELECT == 1 || TASK_SELECT == -1
-  pin(LOW);
-#endif
-  
-  return;
+return;
 }
+
 
 int randomInteger(int low, int high) {
   double randNum = 0.0;
