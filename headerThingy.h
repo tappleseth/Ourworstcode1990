@@ -1,3 +1,7 @@
+#ifndef HEADERTHINGY_H
+#define HEADERTHINGY_H
+
+
 #define MAX_QUEUE_LENGTH        6
 #define DELAY                   250000
 #define TASK_SELECT             2
@@ -24,30 +28,29 @@ static boringTom* current;
 
 //FUNCTION PROTOTYPES
 void Startup(void);
-void Schedule(void* data);
-void TrainCom(void* data);
-void CurrentTrain(void*, void*);
-void SwitchControl(void* data);
-void SerialCommunications(void* data);
 
 void addToStack(boringTom* addMe);
 int getStackSize(void);
 void popFromStack(void);
-
-void NorthTrain(void* data);
-void EastTrain(void* data);
-void WestTrain(void* data);
 void TomSchedule(void);
+
 void NuTrainCom(void* localData, void* globalData);
 void CurrentTrain(void* localData, void* globalData);
 void NuSwitchControl(void* localData, void* globalData);
 void SerialComTask(void* localData, void* globalData);
+
+void IntTimer0(void);
+int randomInteger(int a, int b);
+void Delay(int* foolioJenkins);
+void pin(bool);
+void IntGPIOe(void);
 //END FUNCTION PROTOTYPES
 
 //GLOBAL VARIABLE DECLARATIONS
 
 static unsigned int TrainState;
 static unsigned int TimerState;
+static unsigned int seed;
 
 
 //END GLOBAL VARIABLE DECLARATIONS
@@ -73,10 +76,6 @@ typedef struct {
   unsigned char fromDirection;
 } globalData;
 
-typedef struct {  
-  unsigned int* globalCount;
-} scheduleData;
-
 typedef struct {
   bool north;
   bool east;
@@ -95,14 +94,6 @@ typedef struct {
 } currentTrainData;
 
 typedef struct {
-  bool north;
-  bool east;
-  bool west;
-  bool gridlock;
-  bool trainPresent;
-  unsigned int trainSize;
-  unsigned int globalCount;
-  unsigned int traversalTime;
   unsigned int startTime;
 } switchControlData;
 
@@ -110,4 +101,5 @@ typedef struct {
   bool data;
 } serialCommunicationsData;
 
+#endif
 //END STRUCT DEFINITIONS
