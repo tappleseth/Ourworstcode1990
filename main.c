@@ -177,8 +177,12 @@ void TomSchedule(){
  addToStack(&serialThingyHell);
  addToStack(&trainComHell);
   while(1){
-  
- 
+  //traverse stack
+    current = head;
+    while (current != NULL){
+      current->justTrainTaskThings(current->localDataPtr,current->globalDataPtr);
+      current = current->next;
+    }
 }
 
 return;
