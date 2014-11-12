@@ -107,6 +107,7 @@ void CurrentTrain(void* localData, void* sharedData){
     northFlashCount = 0;
     brightness = 15;
     localPtr->toggleNorth = FALSE;
+    globalPtr->currentTrainComplete = TRUE;
     RIT128x96x4StringDraw(northDisplay, 10, 40, 0);
   }
   
@@ -205,6 +206,7 @@ void CurrentTrain(void* localData, void* sharedData){
   
   if(globalPtr->globalCount >= globalPtr->traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
+    globalPtr->currentTrainComplete = TRUE;
     eastNoiseCount = 0;
     eastFlashCount = 0;
     brightness = 15;
@@ -288,6 +290,7 @@ void CurrentTrain(void* localData, void* sharedData){
   
   if(globalPtr->globalCount >= globalPtr->traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
+    globalPtr->currentTrainComplete = TRUE;
     westNoiseCount = 0;
     westFlashCount = 0;
     brightness = 15;
@@ -389,6 +392,7 @@ void CurrentTrain(void* localData, void* sharedData){
   
   if(globalPtr->globalCount >= globalPtr->traversalTime) {
     PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
+    globalPtr->currentTrainComplete = TRUE;
     southNoiseCount = 0;
     southFlashCount = 0;
     brightness = 15;
