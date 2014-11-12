@@ -16,6 +16,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/uart.h"
 boringTom* head;
 boringTom* current;
 unsigned int TrainState;
@@ -23,6 +24,9 @@ unsigned int TimerState;
 unsigned int seed = 1;
 unsigned int tempCount = 0;
 unsigned int frequencyCount = 0;
+unsigned char globalCountArray[10];
+unsigned char passCountArray[4];
+unsigned char numCars[];
 
 int main(){
   Startup();
@@ -148,16 +152,18 @@ void TomSchedule(){
   trainComData ourTrainComData;
   switchControlData ourSwitchControlData;
   currentTrainData ourCurrentTrainData;
+  serialCommunicationsData ourSerialCommunicationsData;
   
   ourCurrentTrainData.toggleEast = FALSE;
   ourCurrentTrainData.toggleNorth = FALSE;
   ourCurrentTrainData.toggleSouth = FALSE;
   ourCurrentTrainData.toggleWest = FALSE;
   
+  ourSerialcommunicationsData.data = FALSE;
+  
   globalData ourGlobalData;
   ourGlobalData.east = FALSE;
   ourGlobalData.stateTom = 0;
-  ourGlobalData.fromDirection = 0; 
   ourGlobalData.globalCount = 0;
   ourGlobalData.gridlock = FALSE;
   ourGlobalData.north = FALSE;
@@ -196,6 +202,12 @@ void TomSchedule(){
   switchControlHell.globalDataPtr = (void*)&ourGlobalData;
   trainComHell.next = NULL;
   
+  serialThingyHell.justTrainTaskThings = SerialComTask;
+  serialThingyHell.localDataPtr = (void*)&ourSerialCommunicationsData;
+  serialThingyHell.globalDataPtr = (void*)&ourGlobalData;
+  serialThingyHell.next = NULL;
+  
+  
   RIT128x96x4Init(1000000); 
   
   head = NULL;
@@ -222,7 +234,7 @@ void TomSchedule(){
   addToStack(&trainComHell);
   
   static unsigned int justinCrazy = 0;
-  static char globalCountArray[10];
+ 
   for (int tibo = 0; tibo < 10; tibo++)
     globalCountArray[tibo] = ' ';
   while(1){
@@ -345,4 +357,33 @@ void IntGPIOd(void)
   GPIOPinIntClear(GPIO_PORTD_BASE, 0x20);
   
   tempCount+=2;
+}
+
+// The UART interrupt handler.
+void UARTIntHandler(void)
+{
+    unsigned long ulStatus;
+    // Get the interrrupt status.
+    ulStatus = UARTIntStatus(UART0_BASE, true);
+
+    // Clear the asserted interrupts.
+    UARTIntClear(UART0_BASE, ulStatus);
+    
+    // Loop while there are characters in the receive FIFO.
+    while(UARTCharsAvail(UART0_BASE))
+    {
+        // Read the next character from the UART and write it back to the UART.
+        UARTCharPutNonBlocking(UART0_BASE, UARTCharGetNonBlocking(UART0_BASE));
+    }
+}
+
+// Send a string to the UART.
+void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount)
+{    
+    // Loop while there are more characters to send.
+    while(ulCount--)
+    {      
+        // Write the next character to the UART.
+        UARTCharPutNonBlocking(UART0_BASE, *pucBuffer++);
+    }
 }
