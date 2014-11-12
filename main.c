@@ -21,6 +21,8 @@ boringTom* current;
 unsigned int TrainState = 0;
 unsigned int TimerState = 0;
 unsigned int seed = 0;
+unsigned int tempCount = 0;
+unsigned int frequencyCount = 0;
 
 int main(){
   Startup();
@@ -32,7 +34,7 @@ int main(){
 
 void Startup(void) {
   // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+  SysCtlClockSet(SYSCTL_SYSDIV_2 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
                  SYSCTL_XTAL_8MHZ);
   
   /*TIMER CONFIGURATION*/    
@@ -108,6 +110,27 @@ void Startup(void) {
   GPIOPinIntEnable(GPIO_PORTE_BASE, 0xF);
   IntEnable(INT_GPIOE);
   
+  /*GPIO PORT D INTERRUPT SETUP*/
+    //Clear the default ISR handler and install IntGPIOe as the handler:
+  GPIOPortIntUnregister(GPIO_PORTD_BASE);
+  GPIOPortIntRegister(GPIO_PORTD_BASE,IntGPIOd);
+  
+  //Enable GPIO port E, set pin 0 as an input
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);    
+  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, 0x20);
+  
+  //Activate the pull-up on GPIO port E
+  GPIOPadConfigSet(GPIO_PORTD_BASE, 0x20, GPIO_STRENGTH_2MA,
+                   GPIO_PIN_TYPE_STD_WPU);
+  
+  //Configure GPIO port E as triggering on falling edges
+  GPIOIntTypeSet(GPIO_PORTD_BASE, 0x20, GPIO_FALLING_EDGE);
+  
+  //Enable interrupts for GPIO port E
+  GPIOPinIntEnable(GPIO_PORTD_BASE, 0x20);
+  IntEnable(INT_GPIOD);
+  /*GPIO PORT D INTERRUPT SETUP*/  
+  
   
   return;
 }
@@ -126,6 +149,7 @@ void TomSchedule(){
   ourGlobalData.globalCount = 0;
   ourGlobalData.gridlock = FALSE;
   ourGlobalData.north = FALSE;
+  ourGlobalData.passengerCount = 0;
   ourGlobalData.startTime = 0;
   ourGlobalData.trainPresent = FALSE;
   ourGlobalData.trainSize = 0;
@@ -181,37 +205,59 @@ void TomSchedule(){
   //addToStack(&serialThingyHell);
  // int tomSux = 0;
   addToStack(&trainComHell);
+  
+  static unsigned int justinCrazy = 0;
+  static char globalCountArray[10];
+  for (int tibo = 0; tibo < 10; tibo++)
+    globalCountArray[tibo] = ' ';
   while(1){
     //traverse stack
     current = head;
     if (ourGlobalData.trainComComplete==TRUE){
       //if trainCom has done its job, pop trainCom and push SwitchCon and CurrentTrain
+       TrainState = 0;
       popFromStack(); 
       addToStack(&currentTrainHell);
       addToStack(&switchControlHell);
-      ourGlobalData.currentTrainComplete=FALSE;
+      ourGlobalData.trainComComplete=FALSE;
     }
     //if switchCon says traversalTime is over with
     if (ourGlobalData.switchConComplete==TRUE){
-      ourGlobalData.currentTrainComplete=FALSE; //reset for next time
+      ourGlobalData.switchConComplete=FALSE; //reset for next time
       popFromStack(); //remove switchCon
     }
     //if currentTrain says traversalTime is over with
     if (ourGlobalData.currentTrainComplete==TRUE){
       ourGlobalData.currentTrainComplete=FALSE; //reset for next time
       popFromStack(); //remove currentTrain
+       //reset TrainState in anticipation of next train
       addToStack(&trainComHell);
     }
     while (current != NULL){
       current->justTrainTaskThings(current->localDataPtr,current->globalDataPtr);
       current = current->next;
-      while (!TimerState) {
+    }
+    while (!TimerState) {
         
       }
-      TimerState=0;
+    TimerState=0;
+    frequencyCount = tempCount;
+    tempCount = 0;
+      justinCrazy = ourGlobalData.globalCount;
+      justinCrazy++;
+      ourGlobalData.globalCount = justinCrazy;
+      char scheduleTitle[] = "TOM TIME: \0";
+      RIT128x96x4StringDraw(scheduleTitle, 0, 75, 15);
       
-      ourGlobalData.globalCount++;
-    }
+  int i = 9; 
+  
+  while(justinCrazy > 0) {
+    globalCountArray[i] = (justinCrazy%10) + 48;
+    justinCrazy = justinCrazy/10;
+    i--;     
+  }
+  
+  RIT128x96x4StringDraw(globalCountArray, 50, 75, 15);
     
   }
   
@@ -274,4 +320,12 @@ void IntGPIOe(void)
   
   //Switches are normally-high, so flip the polarity of the results:
   TrainState=TrainState^0xF;  //You should work out why and how this works!
+}
+
+void IntGPIOd(void)
+{
+  //Clear the interrupt to avoid continuously looping here
+  GPIOPinIntClear(GPIO_PORTD_BASE, 0x20);
+  
+  tempCount+=2;
 }
