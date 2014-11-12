@@ -15,6 +15,7 @@
 #include "driverlib/gpio.h"
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
+#include "driverlib/uart.h"
 
 void addToStack(boringTom* addMe){
  // head->previous = addMe;
@@ -99,7 +100,7 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);         
-    char numCars[] = {(char) (48+ globalPtr->trainSize),'\0'};
+    numCars[] = {(char) (48+ globalPtr->trainSize),'\0'};
    // step 4: print things
   static char waffleThingy[] = "Train Size: \0";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
@@ -108,12 +109,12 @@ void NuTrainCom(void* localData, void* sharedData){
   //step 5: set flag to pop this mother from the stack
   globalPtr->trainComComplete = TRUE;
   
-  static char globalCountArray[4];
+  
   //step 6: do passengerCount things
   for (int tibo = 0; tibo < 4; tibo++){
-    globalCountArray[tibo] = ' ';
+    passCountArray[tibo] = ' ';
     if (tibo == 3){
-       globalCountArray[tibo] = '\0';
+       passCountArray[tibo] = '\0';
     }
   }
 
@@ -124,13 +125,13 @@ void NuTrainCom(void* localData, void* sharedData){
   int tempPassengerCount = (int) globalPtr->passengerCount;
   
   while(tempPassengerCount > 0) {
-    globalCountArray[z] = (tempPassengerCount%10) + 48;
+    passCountArray[z] = (tempPassengerCount%10) + 48;
     tempPassengerCount = tempPassengerCount/10;
     z--;   
   }
   
     RIT128x96x4StringDraw("Passengers: \0", 10, 60, 15);
-    RIT128x96x4StringDraw(globalCountArray, 80, 60, 15);
+    RIT128x96x4StringDraw(passCountArray, 80, 60, 15);
   return;
   }
 }
@@ -210,13 +211,49 @@ void NuSwitchControl(void* localData, void* sharedData){
 #if TASK_SELECT == 1 || TASK_SELECT == -1
   pin(LOW);
 #endif
-             }
+}
              
-             void SerialComTask(void* localData, void* globalData){
-               return;
-             }
-             
-          
-             
-             
-             
+void SerialComTask(void* localData, void* sharedData){
+  globalData* globalPtr = (globalData*)sharedData;    
+    
+  if(globalPtr->north) {
+    UARTSend((unsigned char *)"Heading: North", 14);
+  }
+  if(globalPtr->east) {
+    UARTSend((unsigned char *)"Heading: East", 13);
+  }
+  if(globalPtr->south) {
+    UARTSend((unsigned char *)"Heading: South", 14);
+  }
+  if(globalPtr->west) {
+    UARTSend((unsigned char *)"Heading: West", 13);
+  }
+  if(globalPtr->fromDirection == 'N') {
+    UARTSend((unsigned char *)"From Direction: North", 21);
+  }
+  if(globalPtr->fromDirection == 'E') {
+    UARTSend((unsigned char *)"From Direction: East", 20);
+  }
+  if(globalPtr->fromDirection == 'S') {
+    UARTSend((unsigned char *)"From Direction: South", 21);
+  }
+  if(globalPtr->fromDirection == 'W') {
+    UARTSend((unsigned char *)"From Direction: West", 20);
+  }  
+  if(globalPtr->trainSize) {
+    UARTSend((unsigned char *)"Train Size: ", 10);
+    UARTSend((unsigned char *)numCars, 1);
+  }
+  if(globalPtr->gridlock) {
+    UARTSend((unsigned char *)"GRIDLOCK!", 9);
+  }
+  if(globalPtr->passengerCount) {
+    UARTSend((unsigned char *)"Passengers: ", 12);
+    UARTSend((unsigned char *)passcountArray, 4);
+  }  
+  if(globalPtr->globalCount) {
+    UARTSend((unsigned char *)"AHT Time: ", 10);
+    UARTSend((unsigned char *)globalCountArray, 10);
+  }  
+  return;
+}
