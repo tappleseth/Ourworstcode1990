@@ -26,6 +26,9 @@ extern boringTom* head;
 extern boringTom* current;
 extern unsigned int tempCount;
 extern unsigned int frequencyCount;
+extern unsigned int seed;
+extern unsigned int TrainState;
+extern unsigned int TimerState;
 
 //FUNCTION PROTOTYPES
 extern void Startup(void);
@@ -71,6 +74,8 @@ typedef struct {
   unsigned int globalCount;
   unsigned int trainSize;
   unsigned int traversalTime;
+  //so we can have train run after gridlock:
+  unsigned int gridlockTime;
   unsigned int startTime;
   bool trainComComplete;
   bool currentTrainComplete;
