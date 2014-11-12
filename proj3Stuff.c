@@ -17,18 +17,17 @@
 #include "driverlib/interrupt.h"
 
 void addToStack(boringTom* addMe){
-  head->next = addMe;
-  addMe->previous = head;
-  addMe->next = NULL;
-  
+ // head->previous = addMe;
+  addMe->next = head;
   head = addMe;
 }
 
 void popFromStack(){
-  boringTom* lynnsIdea;
-  lynnsIdea = head->previous;
-  head = lynnsIdea;
-  head->next = NULL;
+  //boringTom* lynnsIdea;
+  //lynnsIdea = head->next;
+  //head = lynnsIdea;
+  head = head->next;
+  //head->previous = NULL;
 }
 
 int getStackSize(){
@@ -47,9 +46,13 @@ void NuTrainCom(void* localData, void* sharedData){
   globalData* globalPtr = (globalData*)sharedData;    
   trainComData* localPtr = (trainComData*)localData;
   int direction = 0;
-  
+  //RIT128x96x4StringDraw("Train Com! \0", 10, 50, 15);
    //IF !trainPresent and some button was pressed, THEN generate train
   if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(globalPtr->trainPresent==FALSE)) {
+   
+    
+    
+    
     //step 0: set trainPresent to true
     globalPtr->trainPresent = TRUE;
     //OMFG, do stuff
@@ -92,14 +95,38 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);         
-    char tomLose = (char) globalPtr->trainSize;
+    char numCars[] = {(char) (48+ globalPtr->trainSize),'\0'};
    // step 4: print things
   static char waffleThingy[] = "Train Size: \0";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
-  RIT128x96x4StringDraw(&tomLose, 20, 50, 15);
+  RIT128x96x4StringDraw(numCars, 80, 50, 15);
   
   //step 5: set flag to pop this mother from the stack
   globalPtr->trainComComplete = TRUE;
+  
+  static char globalCountArray[4];
+  //step 6: do passengerCount things
+  for (int tibo = 0; tibo < 4; tibo++){
+    globalCountArray[tibo] = ' ';
+    if (tibo == 3){
+       globalCountArray[tibo] = '\0';
+    }
+  }
+
+  
+  int z = 3;
+  
+  globalPtr->passengerCount = (double) 300.0*((frequencyCount-1000.0)/1000.0);
+  int tempPassengerCount = (int) globalPtr->passengerCount;
+  
+  while(tempPassengerCount > 0) {
+    globalCountArray[z] = (tempPassengerCount%10) + 48;
+    tempPassengerCount = tempPassengerCount/10;
+    z--;   
+  }
+  
+    RIT128x96x4StringDraw("Passengers: \0", 10, 60, 15);
+    RIT128x96x4StringDraw(globalCountArray, 80, 60, 15);
   return;
   }
 }
@@ -111,13 +138,14 @@ void NuSwitchControl(void* localData, void* sharedData){
   
   globalData* globalPtr = (globalData*)sharedData;
   switchControlData* localPtr = (switchControlData*)localData;
-  
+  static int firstCycle = 0;
   static int rand = 0;
   static char brando9k[] = "GRIDLOCK! \0";
   static int brightness = 15;
   
-  if(!globalPtr->gridlock && globalPtr->trainPresent) {
+  if(!globalPtr->gridlock && globalPtr->trainPresent && firstCycle == 0) {
     //startTime is logged as whatever current globalCount value is
+    firstCycle = 1;
     localPtr->startTime = globalPtr->globalCount;
     //generate a random number between -2 and 2
     rand = randomInteger(-2, 2);
@@ -159,6 +187,8 @@ void NuSwitchControl(void* localData, void* sharedData){
       globalPtr->east = FALSE;
       globalPtr->west = FALSE;
       globalPtr->south = FALSE;
+      globalPtr->switchConComplete = TRUE;
+      firstCycle = 0;
     }
   }
   
