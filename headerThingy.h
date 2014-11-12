@@ -22,6 +22,7 @@ typedef struct {
   void* previous;
 } boringTom;
 
+//GLOBAL VARIABLE DECLARATIONS
 extern boringTom* head;
 extern boringTom* current;
 extern unsigned int tempCount;
@@ -29,6 +30,9 @@ extern unsigned int frequencyCount;
 extern unsigned int seed;
 extern unsigned int TrainState;
 extern unsigned int TimerState;
+extern unsigned char globalCountArray[10];
+extern unsigned char passCountArray[4];
+extern unsigned char numCars[];
 
 //FUNCTION PROTOTYPES
 extern void Startup(void);
@@ -49,13 +53,14 @@ extern void Delay(int* foolioJenkins);
 extern void pin(bool);
 extern void IntGPIOe(void);
 extern void IntGPIOd(void);
+
+extern void UARTIntHandler(void);
+extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
 //END FUNCTION PROTOTYPES
 
-//GLOBAL VARIABLE DECLARATIONS
 
-extern unsigned int TrainState;
-extern unsigned int TimerState;
-extern unsigned int seed;
+
+
 
 
 //END GLOBAL VARIABLE DECLARATIONS
