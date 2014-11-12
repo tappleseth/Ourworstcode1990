@@ -46,25 +46,29 @@ void NuTrainCom(void* localData, void* sharedData){
   globalData* globalPtr = (globalData*)sharedData;    
   trainComData* localPtr = (trainComData*)localData;
   int direction = 0;
-  //RIT128x96x4StringDraw("Train Com! \0", 10, 50, 15);
+  
    //IF !trainPresent and some button was pressed, THEN generate train
   if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(globalPtr->trainPresent==FALSE)) {
-   
+   globalPtr->trainSize = 0;
     
     
-    
+    RIT128x96x4StringDraw("I'm a dummy!!!!!!!! \0", 10, 30, 0);
     //step 0: set trainPresent to true
     globalPtr->trainPresent = TRUE;
-    //OMFG, do stuff
+    
     //step 1: set from direction
     if (TrainState == 1){
       globalPtr->fromDirection = 'N';
+      RIT128x96x4StringDraw("From: North \0", 10, 30, 15);
     } else if (TrainState == 2){
       globalPtr->fromDirection = 'S';
+      RIT128x96x4StringDraw("From: South \0", 10, 30, 15);
     }  else if (TrainState == 4){
       globalPtr->fromDirection = 'W';
+      RIT128x96x4StringDraw("From: West \0", 10, 30, 15);
     } else {
       globalPtr->fromDirection = 'E';
+      RIT128x96x4StringDraw("From: East \0", 10, 30, 15);
     }
     
     // step 2: generate TO train direction
@@ -143,7 +147,13 @@ void NuSwitchControl(void* localData, void* sharedData){
   static char brando9k[] = "GRIDLOCK! \0";
   static int brightness = 15;
   
+  //CASE 1
+  //train just generated, gridlock is false
   if(!globalPtr->gridlock && globalPtr->trainPresent && firstCycle == 0) {
+    
+    //The next line clears the idle track message already on the screen
+    //RIT128x96x4StringDraw("Turn this off! Aaaaa! \0", 10, 30, 0); 
+    
     //startTime is logged as whatever current globalCount value is
     firstCycle = 1;
     localPtr->startTime = globalPtr->globalCount;
@@ -151,9 +161,11 @@ void NuSwitchControl(void* localData, void* sharedData){
     rand = randomInteger(-2, 2);
     
     //if random number is less than 0, we have GRIDLOCK!
+    //note: TRAIN MUST RUN AFTER GRIDLOCK FINISHES
     if(rand < 0) {
       globalPtr->gridlock = TRUE;
-      globalPtr->traversalTime = globalPtr->globalCount + (-70*rand);
+      globalPtr->gridlockTime = globalPtr->globalCount + (-70*rand);
+      globalPtr->traversalTime = 35*(globalPtr->trainSize) + globalPtr->globalCount + globalPtr->gridlockTime;
     }
     //if random number is greater than 0, we have a train passing through!
     else {
@@ -164,16 +176,16 @@ void NuSwitchControl(void* localData, void* sharedData){
   //CASE 2
   //gridlock is true
   if(globalPtr->gridlock) {
-    //if globalCount exceeds gridlock timer, end gridlock
-    if ((globalPtr->globalCount - globalPtr->traversalTime) % 6 == 0)
+    
+    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 6 == 0)
       brightness = 15; 
     
-    if ((globalPtr->globalCount - globalPtr->traversalTime) % 6 == 3)
+    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 6 == 3)
       brightness = 0;
     
     RIT128x96x4StringDraw(brando9k, 10, 40, brightness); 
-    
-    if(globalPtr->globalCount >= globalPtr->traversalTime)
+    //if globalCount exceeds gridlock timer, end gridlock
+    if(globalPtr->globalCount >= globalPtr->gridlockTime)
       globalPtr->gridlock = FALSE;
   }
   
@@ -188,6 +200,9 @@ void NuSwitchControl(void* localData, void* sharedData){
       globalPtr->west = FALSE;
       globalPtr->south = FALSE;
       globalPtr->switchConComplete = TRUE;
+      PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
+      RIT128x96x4StringDraw("I don't care \0", 10, 40, 0); //turn off bullshit
+     // RIT128x96x4StringDraw("Tracks Idle", 10, 30, 15);
       firstCycle = 0;
     }
   }
