@@ -18,9 +18,9 @@
 #include "driverlib/interrupt.h"
 boringTom* head;
 boringTom* current;
-unsigned int TrainState = 0;
-unsigned int TimerState = 0;
-unsigned int seed = 0;
+unsigned int TrainState;
+unsigned int TimerState;
+unsigned int seed = 1;
 unsigned int tempCount = 0;
 unsigned int frequencyCount = 0;
 
@@ -33,14 +33,18 @@ int main(){
 }
 
 void Startup(void) {
+
+  //reset TrainState and TimeRState -thomas
+  
   // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_2 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+  SysCtlClockSet(SYSCTL_SYSDIV_3 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
                  SYSCTL_XTAL_8MHZ);
   
   /*TIMER CONFIGURATION*/    
   //Clear the default ISR handler and install IntTimer0 as the handler:
   TimerIntUnregister(TIMER0_BASE, TIMER_A);
   TimerIntRegister(TIMER0_BASE, TIMER_A, IntTimer0);
+  
   
   //Enable Timer 0    
   SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
@@ -131,6 +135,9 @@ void Startup(void) {
   IntEnable(INT_GPIOD);
   /*GPIO PORT D INTERRUPT SETUP*/  
   
+  TrainState = 0;
+  TimerState = 0;
+  
   
   return;
 }
@@ -141,6 +148,11 @@ void TomSchedule(){
   trainComData ourTrainComData;
   switchControlData ourSwitchControlData;
   currentTrainData ourCurrentTrainData;
+  
+  ourCurrentTrainData.toggleEast = FALSE;
+  ourCurrentTrainData.toggleNorth = FALSE;
+  ourCurrentTrainData.toggleSouth = FALSE;
+  ourCurrentTrainData.toggleWest = FALSE;
   
   globalData ourGlobalData;
   ourGlobalData.east = FALSE;
@@ -155,9 +167,12 @@ void TomSchedule(){
   ourGlobalData.trainSize = 0;
   ourGlobalData.traversalTime = 0;
   ourGlobalData.west = FALSE;
+  ourGlobalData.south = FALSE;
   ourGlobalData.currentTrainComplete = FALSE;
   ourGlobalData.switchConComplete = FALSE;
   ourGlobalData.trainComComplete = FALSE;
+  ourGlobalData.fromDirection = 'X';
+  ourGlobalData.gridlockTime = 0;
   
   
   //pointer structs
@@ -246,8 +261,9 @@ void TomSchedule(){
       justinCrazy = ourGlobalData.globalCount;
       justinCrazy++;
       ourGlobalData.globalCount = justinCrazy;
-      char scheduleTitle[] = "TOM TIME: \0";
-      RIT128x96x4StringDraw(scheduleTitle, 0, 75, 15);
+      char scheduleTitle[] = "AHT Time: \0";
+      RIT128x96x4StringDraw(scheduleTitle, 0, 80, 15);
+     
       
   int i = 9; 
   
@@ -257,7 +273,8 @@ void TomSchedule(){
     i--;     
   }
   
-  RIT128x96x4StringDraw(globalCountArray, 50, 75, 15);
+  
+  RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
     
   }
   
