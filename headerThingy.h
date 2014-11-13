@@ -32,7 +32,7 @@ extern unsigned int TrainState;
 extern unsigned int TimerState;
 extern unsigned char globalCountArray[10];
 extern unsigned char passCountArray[4];
-extern unsigned char numCars[];
+//extern unsigned char numCars[2];
 
 //FUNCTION PROTOTYPES
 extern void Startup(void);
