@@ -17,6 +17,7 @@
 #include "driverlib/pwm.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/uart.h"
+
 boringTom* head;
 boringTom* current;
 unsigned int TrainState;
@@ -26,7 +27,7 @@ unsigned int tempCount = 0;
 unsigned int frequencyCount = 0;
 unsigned char globalCountArray[10];
 unsigned char passCountArray[4];
-unsigned char numCars[];
+//unsigned char numCars[2];
 
 int main(){
   Startup();
@@ -38,17 +39,14 @@ int main(){
 
 void Startup(void) {
 
-  //reset TrainState and TimeRState -thomas
-  
   // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_3 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
                  SYSCTL_XTAL_8MHZ);
   
   /*TIMER CONFIGURATION*/    
   //Clear the default ISR handler and install IntTimer0 as the handler:
   TimerIntUnregister(TIMER0_BASE, TIMER_A);
   TimerIntRegister(TIMER0_BASE, TIMER_A, IntTimer0);
-  
   
   //Enable Timer 0    
   SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
@@ -91,9 +89,6 @@ void Startup(void) {
   //Activate PWM0
   PWMGenEnable(PWM0_BASE, PWM_GEN_0);   
   PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-  
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA); 
   
   // Set the clocking to run directly from the crystal.
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
@@ -139,6 +134,46 @@ void Startup(void) {
   IntEnable(INT_GPIOD);
   /*GPIO PORT D INTERRUPT SETUP*/  
   
+  /*
+  
+  UART STUFF ***
+  
+  */
+  
+  
+  //
+    // Enable the peripherals used by this example.
+    //
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+
+    //
+    // Enable processor interrupts.
+    //
+    IntMasterEnable();
+
+    //
+    // Set GPIO A0 and A1 as UART pins.
+    //
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    //
+    // Configure the UART for 115,200, 8-N-1 operation.
+    //
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
+                        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                         UART_CONFIG_PAR_NONE));
+
+    //
+    // Enable the UART interrupt.
+    //
+    IntEnable(INT_UART0);
+    UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+/*
+    
+    END UART MADNESS
+    
+*/
   TrainState = 0;
   TimerState = 0;
   
@@ -159,7 +194,7 @@ void TomSchedule(){
   ourCurrentTrainData.toggleSouth = FALSE;
   ourCurrentTrainData.toggleWest = FALSE;
   
-  ourSerialcommunicationsData.data = FALSE;
+  ourSerialCommunicationsData.data = FALSE;
   
   globalData ourGlobalData;
   ourGlobalData.east = FALSE;
@@ -217,26 +252,16 @@ void TomSchedule(){
   static char flairTitle2[] = "Discount Freight \0";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
-  //static int checkSize = 0;
-  
-  
-  /*typedef struct {
-  void (*justTrainTaskThings)(void*,void*);
-  void* localDataPtr;
-  void* globalDataPtr;
-  void* next;
-  void* previous;
-} boringTom;
-  */
+
   //build initial stack
-  //addToStack(&serialThingyHell);
- // int tomSux = 0;
+ // addToStack(&serialThingyHell);
   addToStack(&trainComHell);
   
   static unsigned int justinCrazy = 0;
  
-  for (int tibo = 0; tibo < 10; tibo++)
+  for (int tibo = 0; tibo < 9; tibo++)
     globalCountArray[tibo] = ' ';
+    globalCountArray[9] = '\0'; 
   while(1){
     //traverse stack
     current = head;
@@ -286,7 +311,7 @@ void TomSchedule(){
   }
   
   
-  RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
+  RIT128x96x4StringDraw((char const*)globalCountArray, 65, 80, 15);
     
   }
   
@@ -357,33 +382,4 @@ void IntGPIOd(void)
   GPIOPinIntClear(GPIO_PORTD_BASE, 0x20);
   
   tempCount+=2;
-}
-
-// The UART interrupt handler.
-void UARTIntHandler(void)
-{
-    unsigned long ulStatus;
-    // Get the interrrupt status.
-    ulStatus = UARTIntStatus(UART0_BASE, true);
-
-    // Clear the asserted interrupts.
-    UARTIntClear(UART0_BASE, ulStatus);
-    
-    // Loop while there are characters in the receive FIFO.
-    while(UARTCharsAvail(UART0_BASE))
-    {
-        // Read the next character from the UART and write it back to the UART.
-        UARTCharPutNonBlocking(UART0_BASE, UARTCharGetNonBlocking(UART0_BASE));
-    }
-}
-
-// Send a string to the UART.
-void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount)
-{    
-    // Loop while there are more characters to send.
-    while(ulCount--)
-    {      
-        // Write the next character to the UART.
-        UARTCharPutNonBlocking(UART0_BASE, *pucBuffer++);
-    }
 }
