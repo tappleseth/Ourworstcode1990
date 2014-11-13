@@ -1,11 +1,12 @@
-#include "headerThingy.h"
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include "headerThingy.h"
+
+#include "inc/hw_ints.h"
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
 
 #include "inc/lm3s8962.h"
 #include "driverlib/debug.h"
@@ -45,7 +46,7 @@ int getStackSize(){
 
 void NuTrainCom(void* localData, void* sharedData){
   globalData* globalPtr = (globalData*)sharedData;    
-  trainComData* localPtr = (trainComData*)localData;
+  //trainComData* localPtr = (trainComData*)localData;
   int direction = 0;
   
    //IF !trainPresent and some button was pressed, THEN generate train
@@ -99,8 +100,8 @@ void NuTrainCom(void* localData, void* sharedData){
     }
              
     // step 3: generate train size
-    globalPtr->trainSize = randomInteger(2,9);         
-    numCars[] = {(char) (48+ globalPtr->trainSize),'\0'};
+    globalPtr->trainSize = randomInteger(2,9);    
+  char numCars[2] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
    // step 4: print things
   static char waffleThingy[] = "Train Size: \0";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
@@ -111,12 +112,12 @@ void NuTrainCom(void* localData, void* sharedData){
   
   
   //step 6: do passengerCount things
-  for (int tibo = 0; tibo < 4; tibo++){
+  //char passCountArray[4];
+  for (int tibo = 0; tibo < 4; tibo++)
     passCountArray[tibo] = ' ';
-    if (tibo == 3){
-       passCountArray[tibo] = '\0';
-    }
-  }
+    passCountArray[3] = '\0';
+    
+  
 
   
   int z = 3;
@@ -131,7 +132,7 @@ void NuTrainCom(void* localData, void* sharedData){
   }
   
     RIT128x96x4StringDraw("Passengers: \0", 10, 60, 15);
-    RIT128x96x4StringDraw(passCountArray, 80, 60, 15);
+    RIT128x96x4StringDraw((const char*)passCountArray, 80, 60, 15);
   return;
   }
 }
@@ -215,45 +216,80 @@ void NuSwitchControl(void* localData, void* sharedData){
              
 void SerialComTask(void* localData, void* sharedData){
   globalData* globalPtr = (globalData*)sharedData;    
-    
-  if(globalPtr->north) {
-    UARTSend((unsigned char *)"Heading: North", 14);
-  }
-  if(globalPtr->east) {
-    UARTSend((unsigned char *)"Heading: East", 13);
-  }
-  if(globalPtr->south) {
-    UARTSend((unsigned char *)"Heading: South", 14);
-  }
-  if(globalPtr->west) {
-    UARTSend((unsigned char *)"Heading: West", 13);
-  }
+  //localData* localPtr = (localData*)localData;
+  
+  //RIT128x96x4StringDraw("From: Russia ", 10, 60, 15);
+ // UARTSend("From: Russia\r\n",14);
+  for(int i=0; i<1600;i++);
+  //UARTSend("With love\r\n",11);
+  
   if(globalPtr->fromDirection == 'N') {
-    UARTSend((unsigned char *)"From Direction: North", 21);
+    UARTSend((unsigned char*)"From: North\r\n", 15);
+    for(int i=0; i<1600;i++);
   }
   if(globalPtr->fromDirection == 'E') {
-    UARTSend((unsigned char *)"From Direction: East", 20);
+    UARTSend((unsigned char*)"From: East\r\n", 14);
+    for(int i=0; i<1600;i++);
   }
   if(globalPtr->fromDirection == 'S') {
-    UARTSend((unsigned char *)"From Direction: South", 21);
+    UARTSend((unsigned char*)"From: South\r\n", 15);
+    for(int i=0; i<1600;i++);
   }
   if(globalPtr->fromDirection == 'W') {
-    UARTSend((unsigned char *)"From Direction: West", 20);
+    UARTSend((unsigned char*)"From: West\r\n", 14);
+    for(int i=0; i<1600;i++);
   }  
+  
+  if (!globalPtr->gridlock){
+    if(globalPtr->north) {
+      UARTSend((unsigned char*)"To: North\r\n", 11);
+      for(int i=0; i<1600;i++);
+    }
+    if(globalPtr->east) {
+      UARTSend((unsigned char*)"To: East\r\n", 10);
+      for(int i=0; i<1600;i++);
+    }
+    if(globalPtr->south) {
+      UARTSend((unsigned char*)"To: South\r\n", 11);
+      for(int i=0; i<1600;i++);
+    }
+    if(globalPtr->west) {
+      UARTSend((unsigned char*)"To: West\r\n", 10);
+      for(int i=0; i<1600;i++);
+    }
+  } else {
+    UARTSend((unsigned char*)"GRIDLOCK!!\r\n", 12);
+    for(int i=0; i<1600;i++);
+  }
+  
   if(globalPtr->trainSize) {
-    UARTSend((unsigned char *)"Train Size: ", 10);
-    UARTSend((unsigned char *)numCars, 1);
+    unsigned char godDamnit;
+    godDamnit = 48 + globalPtr->trainSize;
+    for(int i=0; i<1600;i++);
+    UARTSend("Train Size: ", 12);
+    for(int i=0; i<1600;i++);
+    UARTSend(&godDamnit, 1);
+    for(int i=0; i<1600;i++);
+    UARTSend("\r\n",2);
+    for(int i=0; i<1600;i++);
   }
-  if(globalPtr->gridlock) {
-    UARTSend((unsigned char *)"GRIDLOCK!", 9);
-  }
-  if(globalPtr->passengerCount) {
-    UARTSend((unsigned char *)"Passengers: ", 12);
-    UARTSend((unsigned char *)passcountArray, 4);
-  }  
+ /* if(globalPtr->passengerCount) {
+    UARTSend("Passengers: ", 12);
+    for(int i=0; i<1600;i++);
+    UARTSend(passCountArray, 4);
+    for(int i=0; i<1600;i++);
+    UARTSend("\r\n",2);
+    for(int i=0; i<1600;i++);
+  }  */
   if(globalPtr->globalCount) {
-    UARTSend((unsigned char *)"AHT Time: ", 10);
-    UARTSend((unsigned char *)globalCountArray, 10);
+    UARTSend("AHT Time: ", 10);
+    for(int i=0; i<1600;i++);
+    UARTSend(globalCountArray, 10);
+    for(int i=0; i<1600;i++);
+    UARTSend("\r\n",2);
+    for(int i=0; i<1600;i++);
   }  
+  UARTSend("\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
+  for(int i=0; i<1600;i++);
   return;
 }
