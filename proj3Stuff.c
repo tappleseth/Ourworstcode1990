@@ -212,8 +212,8 @@ void NuSwitchControl(void* localData, void* sharedData){
       PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
       //static char bullshit[] = "I do not care";
       globalPtr->fromDirection = 'X';
-      static char clearSafety[18] = "                 ";
-      RIT128x96x4StringDraw(clearSafety, 10, 40, brightness); 
+      //static char clearSafety[18] = "                 ";
+      //RIT128x96x4StringDraw(clearSafety, 10, 40, brightness); 
      // RIT128x96x4StringDraw("Tracks Idle", 10, 30, 15);
       firstCycle = 0;
     }
