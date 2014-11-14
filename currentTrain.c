@@ -39,7 +39,7 @@ void CurrentTrain(void* localData, void* sharedData){
     
     static unsigned int noiseCount = 0;
     static unsigned int northFlashCount = 0;  
-    static char northDisplay[] = "Heading: North ";
+    static char northDisplay[15] = "Heading: North";
     static int brightness = 15;
     
     if(globalPtr->north) {
@@ -117,7 +117,7 @@ void CurrentTrain(void* localData, void* sharedData){
     
     static unsigned int eastNoiseCount = 0;
     static unsigned int eastFlashCount = 0;
-    static char eastDisplay[] = "Heading: East ";
+    static char eastDisplay[14] = "Heading: East";
     static int brightness = 15;
     
     if(globalPtr->east) {
@@ -214,7 +214,7 @@ void CurrentTrain(void* localData, void* sharedData){
     
     static unsigned int westNoiseCount = 0;
     static unsigned int westFlashCount = 0;
-    static char westDisplay[] = "Heading: West ";
+    static char westDisplay[14] = "Heading: West";
     static int brightness = 15;  
     
     if(globalPtr->west) {
@@ -291,7 +291,7 @@ void CurrentTrain(void* localData, void* sharedData){
     
     static unsigned int southNoiseCount = 0;
     static unsigned int southFlashCount = 0;
-    static char southDisplay[] = "Heading: South ";
+    static char southDisplay[15] = "Heading: South";
     static int brightness = 15;
     
     if(globalPtr->south) {
