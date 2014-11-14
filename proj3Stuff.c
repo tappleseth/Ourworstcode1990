@@ -29,7 +29,6 @@ void popFromStack(){
   //lynnsIdea = head->next;
   //head = lynnsIdea;
   head = head->next;
-  //head->previous = NULL;
 }
 
 int getStackSize(){
@@ -53,24 +52,28 @@ void NuTrainCom(void* localData, void* sharedData){
   if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(globalPtr->trainPresent==FALSE)) {
    globalPtr->trainSize = 0;
     
-    
-    RIT128x96x4StringDraw("I'm a dummy!!!!!!!! \0", 10, 30, 0);
+    static char nobodyChars[] = "I'm a dummy!!!!!!!!!";
+    RIT128x96x4StringDraw(nobodyChars, 10, 30, 0);
     //step 0: set trainPresent to true
     globalPtr->trainPresent = TRUE;
     
     //step 1: set from direction
     if (TrainState == 1){
       globalPtr->fromDirection = 'N';
-      RIT128x96x4StringDraw("From: North \0", 10, 30, 15);
+      static char fromNorth[] = "From: North ";
+      RIT128x96x4StringDraw(fromNorth, 10, 30, 15);
     } else if (TrainState == 2){
       globalPtr->fromDirection = 'S';
-      RIT128x96x4StringDraw("From: South \0", 10, 30, 15);
+      static char fromSouth[] = "From: South ";
+      RIT128x96x4StringDraw(fromSouth, 10, 30, 15);
     }  else if (TrainState == 4){
       globalPtr->fromDirection = 'W';
-      RIT128x96x4StringDraw("From: West \0", 10, 30, 15);
+      static char fromWest[] = "From: West ";
+      RIT128x96x4StringDraw(fromWest, 10, 30, 15);
     } else {
       globalPtr->fromDirection = 'E';
-      RIT128x96x4StringDraw("From: East \0", 10, 30, 15);
+      static char fromEast[] = "From: East ";
+      RIT128x96x4StringDraw(fromEast, 10, 30, 15);
     }
     
     // step 2: generate TO train direction
@@ -101,9 +104,9 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);    
-  char numCars[2] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
+  char numCars[] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
    // step 4: print things
-  static char waffleThingy[] = "Train Size: \0";
+  static char waffleThingy[] = "Train Size: ";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
   RIT128x96x4StringDraw(numCars, 80, 50, 15);
   
@@ -112,14 +115,8 @@ void NuTrainCom(void* localData, void* sharedData){
   
   
   //step 6: do passengerCount things
-  //char passCountArray[4];
-  for (int tibo = 0; tibo < 4; tibo++)
-    passCountArray[tibo] = ' ';
-    passCountArray[3] = '\0';
-    
-  
-
-  
+  char passCountArray[] = "    ";
+  static char passTitle[] = "Passengers: ";
   int z = 3;
   
   globalPtr->passengerCount = (double) 300.0*((frequencyCount-1000.0)/1000.0);
@@ -131,8 +128,8 @@ void NuTrainCom(void* localData, void* sharedData){
     z--;   
   }
   
-    RIT128x96x4StringDraw("Passengers: \0", 10, 60, 15);
-    RIT128x96x4StringDraw((const char*)passCountArray, 80, 60, 15);
+  RIT128x96x4StringDraw(passTitle, 10, 60, 15);
+    RIT128x96x4StringDraw(passCountArray, 75, 60, 15);
   return;
   }
 }
@@ -146,7 +143,7 @@ void NuSwitchControl(void* localData, void* sharedData){
   switchControlData* localPtr = (switchControlData*)localData;
   static int firstCycle = 0;
   static int rand = 0;
-  static char brando9k[] = "GRIDLOCK! \0";
+  static char brando9k[] = "GRIDLOCK! ";
   static int brightness = 15;
   
   //CASE 1
@@ -166,23 +163,23 @@ void NuSwitchControl(void* localData, void* sharedData){
     //note: TRAIN MUST RUN AFTER GRIDLOCK FINISHES
     if(rand < 0) {
       globalPtr->gridlock = TRUE;
-      globalPtr->gridlockTime = globalPtr->globalCount + (-70*rand);
-      globalPtr->traversalTime = 35*(globalPtr->trainSize) + globalPtr->globalCount + globalPtr->gridlockTime;
+      globalPtr->gridlockTime = globalPtr->globalCount + (-12*rand);
+      globalPtr->traversalTime = 6*(globalPtr->trainSize) + globalPtr->globalCount + globalPtr->gridlockTime;
     }
     //if random number is greater than 0, we have a train passing through!
     else {
       
-      globalPtr->traversalTime = 35*(globalPtr->trainSize) + globalPtr->globalCount;
+      globalPtr->traversalTime = 6*(globalPtr->trainSize) + globalPtr->globalCount;
     }
   }
   //CASE 2
   //gridlock is true
   if(globalPtr->gridlock) {
     
-    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 6 == 0)
+    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 2 == 0)
       brightness = 15; 
     
-    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 6 == 3)
+    if ((globalPtr->globalCount - globalPtr->gridlockTime) % 2 == 1)
       brightness = 0;
     
     RIT128x96x4StringDraw(brando9k, 10, 40, brightness); 
@@ -203,7 +200,8 @@ void NuSwitchControl(void* localData, void* sharedData){
       globalPtr->south = FALSE;
       globalPtr->switchConComplete = TRUE;
       PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
-      RIT128x96x4StringDraw("I don't care \0", 10, 40, 0); //turn off bullshit
+      static char bullshit[] = "I do not care ";
+      RIT128x96x4StringDraw(bullshit, 10, 40, 0); //turn off bullshit
      // RIT128x96x4StringDraw("Tracks Idle", 10, 30, 15);
       firstCycle = 0;
     }
@@ -273,15 +271,41 @@ void SerialComTask(void* localData, void* sharedData){
     UARTSend("\r\n",2);
     for(int i=0; i<1600;i++);
   }
- /* if(globalPtr->passengerCount) {
+ if(globalPtr->passengerCount) {
+   
+   unsigned char passCountArray[] = "   ";
+   
+    
+    int tempo = (int) globalPtr->passengerCount;
+    
+    int i = 3; 
+  
+  while(tempo > 0) {
+    passCountArray[i] = (tempo%10) + 48;
+    tempo = tempo/10;
+    i--;     
+  }
     UARTSend("Passengers: ", 12);
     for(int i=0; i<1600;i++);
     UARTSend(passCountArray, 4);
     for(int i=0; i<1600;i++);
     UARTSend("\r\n",2);
     for(int i=0; i<1600;i++);
-  }  */
+  }  
   if(globalPtr->globalCount) {
+    
+    unsigned char globalCountArray[] = "          ";
+    
+    
+    int justinCrazy = globalPtr->globalCount;
+    
+    int i = 9; 
+  
+  while(justinCrazy > 0) {
+    globalCountArray[i] = (justinCrazy%10) + 48;
+    justinCrazy = justinCrazy/10;
+    i--;     
+  }
     UARTSend("AHT Time: ", 10);
     for(int i=0; i<1600;i++);
     UARTSend(globalCountArray, 10);
@@ -289,7 +313,7 @@ void SerialComTask(void* localData, void* sharedData){
     UARTSend("\r\n",2);
     for(int i=0; i<1600;i++);
   }  
-  UARTSend("\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
+  UARTSend((unsigned char*)"\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
   for(int i=0; i<1600;i++);
   return;
 }
