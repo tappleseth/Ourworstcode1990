@@ -170,9 +170,9 @@ void TomSchedule(){
   
   head = NULL;
   head->next = NULL;
-  RIT128x96x4Init(1000000);
-  static char flairTitle1[] = "Applehansontaft \0";
-  static char flairTitle2[] = "Discount Freight \0";
+  //RIT128x96x4Init(1000000);
+  static char flairTitle1[16] = "Applehansontaft";
+  static char flairTitle2[14] = "Econo Freight";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
 
@@ -181,15 +181,11 @@ void TomSchedule(){
   addToStack(&trainComHell);
   
   static unsigned int justinCrazy = 0;
+   static char timeDisplay[10] = "AHT Time:";
   
-  static char globalCountArray[] = "         \0"; 
-  
-  /*for (int tibo = 0; tibo < 9; tibo++){
-    globalCountArray[tibo] = ' ';
-  }*/
-  
-  
+  static char globalCountArray[10] = "         ";
   while(1){
+    
     //traverse stack
     current = head;
     if (ourGlobalData.trainComComplete==TRUE){
@@ -222,20 +218,23 @@ void TomSchedule(){
     TimerState = 0;
     frequencyCount = tempCount;
     tempCount = 0;
+    
       justinCrazy = ourGlobalData.globalCount;
       justinCrazy++;
       ourGlobalData.globalCount = justinCrazy;
     
-      RIT128x96x4StringDraw("AHT Time: \0", 0, 80, 15);
+     
+      RIT128x96x4StringDraw(timeDisplay, 0, 80, 15);
      
       
-  int i = 9; 
+  int i = 8; 
   
   while(justinCrazy > 0) {
     globalCountArray[i] = (justinCrazy%10) + 48;
     justinCrazy = justinCrazy/10;
     i--;     
   }
+  globalCountArray[9] = '\0';
   
   
   RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
