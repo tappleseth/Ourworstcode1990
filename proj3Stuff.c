@@ -52,7 +52,7 @@ void NuTrainCom(void* localData, void* sharedData){
   if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(globalPtr->trainPresent==FALSE)) {
    globalPtr->trainSize = 0;
     
-    static char nobodyChars[] = "I'm a dummy!!!!!!!!!";
+    static char nobodyChars[] = "I'm a dummy!!!!!!!!";
     RIT128x96x4StringDraw(nobodyChars, 10, 30, 0);
     //step 0: set trainPresent to true
     globalPtr->trainPresent = TRUE;
@@ -104,7 +104,8 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);    
-  char numCars[] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
+    char numCars[] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
+  
    // step 4: print things
   static char waffleThingy[] = "Train Size: ";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
@@ -115,9 +116,9 @@ void NuTrainCom(void* localData, void* sharedData){
   
   
   //step 6: do passengerCount things
-  char passCountArray[] = "    ";
+  char passCountArray[] = "   ";
   static char passTitle[] = "Passengers: ";
-  int z = 3;
+  int z = 2;
   
   globalPtr->passengerCount = (double) 300.0*((frequencyCount-1000.0)/1000.0);
   int tempPassengerCount = (int) globalPtr->passengerCount;
@@ -155,7 +156,7 @@ void NuSwitchControl(void* localData, void* sharedData){
     
     //startTime is logged as whatever current globalCount value is
     firstCycle = 1;
-    localPtr->startTime = globalPtr->globalCount;
+    //localPtr->startTime = globalPtr->globalCount;
     //generate a random number between -2 and 2
     rand = randomInteger(-2, 2);
     
