@@ -47,32 +47,41 @@ void NuTrainCom(void* localData, void* sharedData){
   globalData* globalPtr = (globalData*)sharedData;    
   //trainComData* localPtr = (trainComData*)localData;
   int direction = 0;
+  static char fromNorth[12] = "From: North";
+  static char idleState[22] = "Tracks Idle         ";
+  static char fromSouth[12] = "From: South";
+  static char fromWest[12] = "From: West ";
+  static char fromEast[12] = "From: East ";
+  if (globalPtr->fromDirection == 'X'){
+   
+    RIT128x96x4StringDraw(idleState, 10, 30, 15);
+  }
   
    //IF !trainPresent and some button was pressed, THEN generate train
   if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(globalPtr->trainPresent==FALSE)) {
    globalPtr->trainSize = 0;
+    //godDamnit=0;
     
-    static char nobodyChars[] = "I'm a dummy!!!!!!!!";
-    RIT128x96x4StringDraw(nobodyChars, 10, 30, 0);
     //step 0: set trainPresent to true
     globalPtr->trainPresent = TRUE;
     
     //step 1: set from direction
     if (TrainState == 1){
       globalPtr->fromDirection = 'N';
-      static char fromNorth[] = "From: North ";
+      
       RIT128x96x4StringDraw(fromNorth, 10, 30, 15);
+   
     } else if (TrainState == 2){
       globalPtr->fromDirection = 'S';
-      static char fromSouth[] = "From: South ";
+      
       RIT128x96x4StringDraw(fromSouth, 10, 30, 15);
     }  else if (TrainState == 4){
       globalPtr->fromDirection = 'W';
-      static char fromWest[] = "From: West ";
+      
       RIT128x96x4StringDraw(fromWest, 10, 30, 15);
     } else {
       globalPtr->fromDirection = 'E';
-      static char fromEast[] = "From: East ";
+     
       RIT128x96x4StringDraw(fromEast, 10, 30, 15);
     }
     
@@ -104,10 +113,10 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);    
-    char numCars[] = {(unsigned char) (48+ globalPtr->trainSize),'\0'};
-  
+    char numCars[2] = 48+ globalPtr->trainSize;
+  //static char testPhail[] = " ";
    // step 4: print things
-  static char waffleThingy[] = "Train Size: ";
+  static char waffleThingy[12] = "Train Size:";
   RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
   RIT128x96x4StringDraw(numCars, 80, 50, 15);
   
@@ -116,8 +125,8 @@ void NuTrainCom(void* localData, void* sharedData){
   
   
   //step 6: do passengerCount things
-  char passCountArray[] = "   ";
-  static char passTitle[] = "Passengers: ";
+  char passCountArray[4] = "   ";
+  static char passTitle[12] = "Passengers:";
   int z = 2;
   
   globalPtr->passengerCount = (double) 300.0*((frequencyCount-1000.0)/1000.0);
@@ -128,11 +137,13 @@ void NuTrainCom(void* localData, void* sharedData){
     tempPassengerCount = tempPassengerCount/10;
     z--;   
   }
+  passCountArray[3] = '\0';
   
   RIT128x96x4StringDraw(passTitle, 10, 60, 15);
-    RIT128x96x4StringDraw(passCountArray, 75, 60, 15);
+  RIT128x96x4StringDraw(passCountArray, 80, 60, 15);
+  
+  } 
   return;
-  }
 }
              //NOTE: currentTrain has its own best nest
 void NuSwitchControl(void* localData, void* sharedData){
@@ -141,18 +152,16 @@ void NuSwitchControl(void* localData, void* sharedData){
 #endif
   
   globalData* globalPtr = (globalData*)sharedData;
-  switchControlData* localPtr = (switchControlData*)localData;
+ // switchControlData* localPtr = (switchControlData*)localData;
   static int firstCycle = 0;
   static int rand = 0;
-  static char brando9k[] = "GRIDLOCK! ";
+  static char brando9k[10] = "GRIDLOCK!";
   static int brightness = 15;
   
   //CASE 1
   //train just generated, gridlock is false
   if(!globalPtr->gridlock && globalPtr->trainPresent && firstCycle == 0) {
     
-    //The next line clears the idle track message already on the screen
-    //RIT128x96x4StringDraw("Turn this off! Aaaaa! \0", 10, 30, 0); 
     
     //startTime is logged as whatever current globalCount value is
     firstCycle = 1;
@@ -165,7 +174,7 @@ void NuSwitchControl(void* localData, void* sharedData){
     if(rand < 0) {
       globalPtr->gridlock = TRUE;
       globalPtr->gridlockTime = globalPtr->globalCount + (-12*rand);
-      globalPtr->traversalTime = 6*(globalPtr->trainSize) + globalPtr->globalCount + globalPtr->gridlockTime;
+      globalPtr->traversalTime = 6*(globalPtr->trainSize) +  globalPtr->gridlockTime;
     }
     //if random number is greater than 0, we have a train passing through!
     else {
@@ -201,8 +210,9 @@ void NuSwitchControl(void* localData, void* sharedData){
       globalPtr->south = FALSE;
       globalPtr->switchConComplete = TRUE;
       PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
-      static char bullshit[] = "I do not care ";
-      RIT128x96x4StringDraw(bullshit, 10, 40, 0); //turn off bullshit
+      //static char bullshit[] = "I do not care";
+      globalPtr->fromDirection = 'X';
+      //RIT128x96x4StringDraw(bullshit, 10, 40, 0); //turn off bullshit
      // RIT128x96x4StringDraw("Tracks Idle", 10, 30, 15);
       firstCycle = 0;
     }
@@ -236,6 +246,10 @@ void SerialComTask(void* localData, void* sharedData){
   }
   if(globalPtr->fromDirection == 'W') {
     UARTSend((unsigned char*)"From: West\r\n", 14);
+    for(int i=0; i<1600;i++);
+  }  
+  if(globalPtr->fromDirection == 'X') {
+    UARTSend((unsigned char*)"Tracks Idle\r\n", 13);
     for(int i=0; i<1600;i++);
   }  
   
@@ -274,7 +288,7 @@ void SerialComTask(void* localData, void* sharedData){
   }
  if(globalPtr->passengerCount) {
    
-   unsigned char passCountArray[] = "   ";
+   unsigned char passCountArray[] = "    ";
    
     
     int tempo = (int) globalPtr->passengerCount;
