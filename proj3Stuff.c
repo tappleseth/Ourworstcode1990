@@ -113,7 +113,7 @@ void NuTrainCom(void* localData, void* sharedData){
              
     // step 3: generate train size
     globalPtr->trainSize = randomInteger(2,9);    
-    char numCars[2] = 48+ globalPtr->trainSize;
+    char numCars[2] = {48+ globalPtr->trainSize,'\0'};
   //static char testPhail[] = " ";
    // step 4: print things
   static char waffleThingy[12] = "Train Size:";
@@ -212,7 +212,8 @@ void NuSwitchControl(void* localData, void* sharedData){
       PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
       //static char bullshit[] = "I do not care";
       globalPtr->fromDirection = 'X';
-      //RIT128x96x4StringDraw(bullshit, 10, 40, 0); //turn off bullshit
+      static char clearSafety[18] = "                 ";
+      RIT128x96x4StringDraw(clearSafety, 10, 40, brightness); 
      // RIT128x96x4StringDraw("Tracks Idle", 10, 30, 15);
       firstCycle = 0;
     }
