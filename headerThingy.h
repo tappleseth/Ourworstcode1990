@@ -1,98 +1,116 @@
+#ifndef HEADERTHINGY_H
+#define HEADERTHINGY_H
+
+
 #define MAX_QUEUE_LENGTH        6
 #define DELAY                   250000
 #define TASK_SELECT             2
 #define HIGH                    TRUE
 #define LOW                     FALSE
+#define SOUND_ENABLE            0
 
-#define PORT_DATA  (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)  // full 8 bits of port used
+#define PORT_DATA               (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)  // full 8 bits of port used
 
-/*
-THOMAS APPLESETH && BRANDON JOHANSON && JUSTIN "JUSTIN" TAFT
-Professor A. Ecker
-EE 472, AUT 2014
-Project 2
-10/23/2014
-
-DESC: A delightful little bit of embedded programming that simulates a train switching yard. 
-
-Random number generator code provided by professor, originally contained in "rand1.c"
-*/
-
-typedef struct {
-  void (*justTrainTaskThings)(void*);
-  void* trainTaskPtr;
-} TCB;
-
+//PRIMITIVE TYPE DEFINITION
 typedef enum {FALSE = 0, TRUE = 1} bool;
 
-void TrainCom(void* data);
-void SwitchControl(void* data);
-void NorthTrain(void* data);
-void EastTrain(void* data);
-void WestTrain(void* data);
-void Schedule(void* data);
+typedef struct {
+  void (*justTrainTaskThings)(void*,void*);
+  void* localDataPtr;
+  void* globalDataPtr;
+  void* next;
+} boringTom;
 
-static bool north;
-static bool east;
-static bool west;
+//GLOBAL VARIABLE DECLARATIONS
+extern boringTom* head;
+extern boringTom* current;
+extern unsigned int tempCount;
+extern unsigned int frequencyCount;
+extern int seed;
+extern int TrainState;
+extern int TimerState;
+//extern unsigned char globalCountArray[10];
+//extern unsigned char passCountArray[4];
+//extern unsigned char numCars[2];
 
-static bool toggleNorth;
-static bool toggleEast;
-static bool toggleWest;
+//FUNCTION PROTOTYPES
+extern void Startup(void);
 
-static bool gridlock;
-static bool trainPresent;
-static unsigned int trainSize;
-static unsigned int globalCount;
-static unsigned int traversalTime;
-static unsigned int startTime;
+extern void addToStack(boringTom* addMe);
+extern int getStackSize(void);
+extern void popFromStack(void);
+extern void TomSchedule(void);
 
-static int seed;
+extern void NuTrainCom(void* localData, void* globalData);
+extern void CurrentTrain(void* localData, void* globalData);
+extern void NuSwitchControl(void* localData, void* globalData);
+extern void SerialComTask(void* localData, void* globalData);
+
+extern void IntTimer0(void);
+extern int randomInteger(int a, int b);
+extern void Delay(int* foolioJenkins);
+extern void IntGPIOe(void);
+extern void portFcrap(void);
+
+extern void UARTIntHandler(void);
+extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
+//END FUNCTION PROTOTYPES
+
+
+
+
+
+
+//END GLOBAL VARIABLE DECLARATIONS
+
+//STRUCT DEFINITIONS
+
+
+typedef struct {  
+  bool north;
+  bool east;
+  bool west;
+  bool south;
+  bool gridlock;
+  bool trainPresent;  
+  unsigned char stateTom;
+  unsigned int globalCount;
+  unsigned int trainSize;
+  unsigned int traversalTime;
+  //so we can have train run after gridlock:
+  unsigned int gridlockTime;
+  unsigned int startTime;
+  bool trainComComplete;
+  bool currentTrainComplete;
+  bool switchConComplete;
+  unsigned char fromDirection;
+  double passengerCount;
+} globalData;
 
 typedef struct {
-  bool* north;
-  bool* east;
-  bool* west;
-  bool* gridlock;
-  bool* trainPresent;  
-  unsigned int* trainSize;
-  unsigned int* globalCount;
+  bool north;
+  bool east;
+  bool west;
+  bool  gridlock;
+  bool trainPresent;  
+  unsigned int trainSize;
+  unsigned int globalCount;
 } trainComData;
 
 typedef struct {
-  bool* toggleNorth;  
-  bool* north;
-  unsigned int* globalCount;
-  unsigned int* traversalTime;
-} northTrainData;
+  bool toggleNorth;
+  bool toggleSouth;
+  bool toggleWest;
+  bool toggleEast;
+} currentTrainData;
 
 typedef struct {
-  bool* toggleWest;  
-  bool* west;
-  unsigned int* globalCount;
-  unsigned int* traversalTime;
-} westTrainData;
-
-typedef struct {
-  bool* toggleEast;
-  bool* east;
-  unsigned int* globalCount;
-  unsigned int* traversalTime;
-} eastTrainData;
-
-
-typedef struct {
-  bool* north;
-  bool* east;
-  bool* west;
-  bool* gridlock;
-  bool* trainPresent;
-  unsigned int* trainSize;
-  unsigned int* globalCount;
-  unsigned int* traversalTime;
-  unsigned int* startTime;
+  unsigned int startTime;
 } switchControlData;
 
-typedef struct {  
-  unsigned int* globalCount;
-} scheduleData;
+typedef struct {
+  bool data;
+} serialCommunicationsData;
+
+#endif
+//END STRUCT DEFINITIONS
