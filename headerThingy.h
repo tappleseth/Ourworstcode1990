@@ -88,13 +88,7 @@ typedef struct {
 } globalData;
 
 typedef struct {
-  bool north;
-  bool east;
-  bool west;
-  bool  gridlock;
-  bool trainPresent;  
-  unsigned int trainSize;
-  unsigned int globalCount;
+  int direction;
 } trainComData;
 
 typedef struct {
@@ -102,14 +96,20 @@ typedef struct {
   bool toggleSouth;
   bool toggleWest;
   bool toggleEast;
+  int brightness;
+  unsigned noiseCount;
+  unsigned flashCount;
 } currentTrainData;
 
 typedef struct {
-  unsigned int startTime;
+  //unsigned int startTime;
+  int firstCycle;
+  int rand;
+  int brightness;
 } switchControlData;
 
 typedef struct {
-  bool data;
+  int tempo;
 } serialCommunicationsData;
 
 #endif
