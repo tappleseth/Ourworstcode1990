@@ -20,14 +20,15 @@
 
 boringTom* head;
 boringTom* current;
-unsigned int TrainState;
-unsigned int TimerState;
-unsigned int seed = 1;
-unsigned int tempCount = 0;
-unsigned int frequencyCount = 0;
-unsigned char globalCountArray[10];
-unsigned char passCountArray[4];
+int TrainState;
+int TimerState;
+int seed = 1;
+unsigned int tempCount;
+unsigned int frequencyCount;
+//unsigned char globalCountArray[10];
+//unsigned char passCountArray[4];
 //unsigned char numCars[2];
+
 
 int main(){
   Startup();
@@ -38,146 +39,70 @@ int main(){
 }
 
 void Startup(void) {
-
-  // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-                 SYSCTL_XTAL_8MHZ);
   
-  /*TIMER CONFIGURATION*/    
-  //Clear the default ISR handler and install IntTimer0 as the handler:
+ 
+  //STEP 1: OLED and PWM setup
+  unsigned long ulPeriod;
+  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
+  RIT128x96x4Init(1000000);
+  SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
+  GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
+  ulPeriod = SysCtlClockGet() / 440;
+  PWMGenConfigure(PWM0_BASE, PWM_GEN_0,PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
+  PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod);
+  PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, ulPeriod / 16);
+  PWMGenEnable(PWM0_BASE, PWM_GEN_0);   
+  
+  //STEP 2: Timer setup
+  //SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
+  TimerState = 0;
   TimerIntUnregister(TIMER0_BASE, TIMER_A);
   TimerIntRegister(TIMER0_BASE, TIMER_A, IntTimer0);
-  
-  //Enable Timer 0    
   SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  
-  //Configure Timer 0 and set the timebase to 1 second    
   TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
   TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet());    
-  
-  //Enable interrupts for Timer0 and activate it
   IntEnable(INT_TIMER0A);
   TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-  TimerEnable(TIMER0_BASE, TIMER_A);  
-  /*END TIMER CONFIGURATION*/
+  TimerEnable(TIMER0_BASE, TIMER_A);
   
-  //Set PWM Divide Ratio to 1
-  SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
+ // SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
   
-  //Set Device: PWM0 Enabled
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
-  
-  //Set GPIO Port: G Enabled
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
-  
-  //Tell Port G, Pin 1, to take input from PWM 0
-  GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
-  
-  //Set a 440 Hz frequency as u1Period
-  unsigned int ulPeriod = SysCtlClockGet() / 100;
-  
-  //Configure PWM0 in up-down count mode, no sync to clock
-  PWMGenConfigure(PWM0_BASE, PWM_GEN_0,
-                  PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
-  
-  //Set u1Period (440 Hz) as the period of PWM0
-  PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod);
-  
-  //Set PWM0, output 1 to a duty cycle of 1/8
-  PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, ulPeriod / 16);
-  
-  //Activate PWM0
-  PWMGenEnable(PWM0_BASE, PWM_GEN_0);   
-  PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-  
-  // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-                 SYSCTL_XTAL_8MHZ);
-  
-  //Clear the default ISR handler and install IntGPIOe as the handler:
+  //STEP 3: Button pad setup
+  TrainState=0;
   GPIOPortIntUnregister(GPIO_PORTE_BASE);
   GPIOPortIntRegister(GPIO_PORTE_BASE,IntGPIOe);
-  
-  //Enable GPIO port E, set pin 0 as an input
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);    
-  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, 0xF);
-  
-  //Activate the pull-up on GPIO port E
-  GPIOPadConfigSet(GPIO_PORTE_BASE, 0xF, GPIO_STRENGTH_2MA,
-                   GPIO_PIN_TYPE_STD_WPU);
-  
-  //Configure GPIO port E as triggering on falling edges
-  GPIOIntTypeSet(GPIO_PORTE_BASE, 0xF, GPIO_FALLING_EDGE);
-  
-  //Enable interrupts for GPIO port E
-  GPIOPinIntEnable(GPIO_PORTE_BASE, 0xF);
+  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
+  GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 , GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+  GPIOIntTypeSet(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 , GPIO_FALLING_EDGE);
+  GPIOPinIntEnable(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
   IntEnable(INT_GPIOE);
   
-  /*GPIO PORT D INTERRUPT SETUP*/
-    //Clear the default ISR handler and install IntGPIOe as the handler:
-  GPIOPortIntUnregister(GPIO_PORTD_BASE);
-  GPIOPortIntRegister(GPIO_PORTD_BASE,IntGPIOd);
+  //STEP 4: Frequency count setup
+  tempCount = 0;
+  frequencyCount = 0;
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);       
+  GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_3);
+  //GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+  GPIOPortIntUnregister(GPIO_PORTF_BASE);
+  GPIOPortIntRegister(GPIO_PORTF_BASE,portFcrap);
+  GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_RISING_EDGE);
+  GPIOPinIntEnable(GPIO_PORTF_BASE, GPIO_PIN_3);
+  IntEnable(INT_GPIOF);
   
-  //Enable GPIO port E, set pin 0 as an input
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);    
-  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, 0x20);
-  
-  //Activate the pull-up on GPIO port E
-  GPIOPadConfigSet(GPIO_PORTD_BASE, 0x20, GPIO_STRENGTH_2MA,
-                   GPIO_PIN_TYPE_STD_WPU);
-  
-  //Configure GPIO port E as triggering on falling edges
-  GPIOIntTypeSet(GPIO_PORTD_BASE, 0x20, GPIO_FALLING_EDGE);
-  
-  //Enable interrupts for GPIO port E
-  GPIOPinIntEnable(GPIO_PORTD_BASE, 0x20);
-  IntEnable(INT_GPIOD);
-  /*GPIO PORT D INTERRUPT SETUP*/  
-  
-  /*
-  
-  UART STUFF ***
-  
-  */
-  
-  
-  //
-    // Enable the peripherals used by this example.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+  //STEP 5: UART setup
 
-    //
-    // Enable processor interrupts.
-    //
-    IntMasterEnable();
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+  GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+  UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
+                      (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                       UART_CONFIG_PAR_NONE));
+  IntEnable(INT_UART0); //fails here
+  UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
 
-    //
-    // Set GPIO A0 and A1 as UART pins.
-    //
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-
-    //
-    // Configure the UART for 115,200, 8-N-1 operation.
-    //
-    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
-                        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                         UART_CONFIG_PAR_NONE));
-
-    //
-    // Enable the UART interrupt.
-    //
-    IntEnable(INT_UART0);
-    UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
-/*
-    
-    END UART MADNESS
-    
-*/
-  TrainState = 0;
-  TimerState = 0;
-  
-  
   return;
 }
 
@@ -243,31 +168,33 @@ void TomSchedule(){
   serialThingyHell.next = NULL;
   
   
-  RIT128x96x4Init(1000000); 
-  
   head = NULL;
   head->next = NULL;
-  
+  RIT128x96x4Init(1000000);
   static char flairTitle1[] = "Applehansontaft \0";
   static char flairTitle2[] = "Discount Freight \0";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
 
   //build initial stack
- // addToStack(&serialThingyHell);
+  addToStack(&serialThingyHell);
   addToStack(&trainComHell);
   
   static unsigned int justinCrazy = 0;
- 
-  for (int tibo = 0; tibo < 9; tibo++)
+  
+  static char globalCountArray[] = "         \0"; 
+  
+  /*for (int tibo = 0; tibo < 9; tibo++){
     globalCountArray[tibo] = ' ';
-    globalCountArray[9] = '\0'; 
+  }*/
+  
+  
   while(1){
     //traverse stack
     current = head;
     if (ourGlobalData.trainComComplete==TRUE){
       //if trainCom has done its job, pop trainCom and push SwitchCon and CurrentTrain
-       TrainState = 0;
+      TrainState = 0;
       popFromStack(); 
       addToStack(&currentTrainHell);
       addToStack(&switchControlHell);
@@ -290,16 +217,16 @@ void TomSchedule(){
       current = current->next;
     }
     while (!TimerState) {
-        
+      
       }
-    TimerState=0;
+    TimerState = 0;
     frequencyCount = tempCount;
     tempCount = 0;
       justinCrazy = ourGlobalData.globalCount;
       justinCrazy++;
       ourGlobalData.globalCount = justinCrazy;
-      char scheduleTitle[] = "AHT Time: \0";
-      RIT128x96x4StringDraw(scheduleTitle, 0, 80, 15);
+    
+      RIT128x96x4StringDraw("AHT Time: \0", 0, 80, 15);
      
       
   int i = 9; 
@@ -311,7 +238,7 @@ void TomSchedule(){
   }
   
   
-  RIT128x96x4StringDraw((char const*)globalCountArray, 65, 80, 15);
+  RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
     
   }
   
@@ -346,14 +273,6 @@ int randomInteger(int low, int high) {
   return retVal;
 }
 
-void pin(bool status) {
-  if(status)
-    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x20);
-  else
-    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x00);
-  return;
-}
-
 void IntTimer0(void) {
   //Clear the interrupt to avoid continuously looping here
   TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
@@ -367,19 +286,18 @@ void IntTimer0(void) {
 void IntGPIOe(void)
 {
   //Clear the interrupt to avoid continuously looping here
-  GPIOPinIntClear(GPIO_PORTE_BASE, 0xF);
+  GPIOPinIntClear(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
   
   //Set the Event State for GPIO pin 0
-  TrainState=GPIOPinRead(GPIO_PORTE_BASE, 0xF);
+  TrainState=GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
   
   //Switches are normally-high, so flip the polarity of the results:
   TrainState=TrainState^0xF;  //You should work out why and how this works!
 }
 
-void IntGPIOd(void)
+void portFcrap(void)
 {
   //Clear the interrupt to avoid continuously looping here
-  GPIOPinIntClear(GPIO_PORTD_BASE, 0x20);
-  
-  tempCount+=2;
+  GPIOPinIntClear(GPIO_PORTF_BASE, GPIO_PIN_3);
+  tempCount++;
 }
