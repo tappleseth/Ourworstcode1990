@@ -36,11 +36,6 @@ void CurrentTrain(void* localData, void* sharedData){
   */
   
   if(globalPtr->north == TRUE && !globalPtr->gridlock) {
-#if (TASK_SELECT == 2 || TASK_SELECT == -1)
-    pin(HIGH);
-#endif
-    
-    
     
     static unsigned int noiseCount = 0;
     static unsigned int northFlashCount = 0;  
@@ -108,21 +103,7 @@ void CurrentTrain(void* localData, void* sharedData){
 #endif
       }
     }
-    
-    //placeholder: need code to STOP SOME SHIT
-    /*if(globalPtr->globalCount >= globalPtr->traversalTime) {
-      PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-      noiseCount = 0;
-      northFlashCount = 0;
-      brightness = 15;
-      localPtr->toggleNorth = FALSE;
-      globalPtr->currentTrainComplete = TRUE;
-      RIT128x96x4StringDraw(northDisplay, 10, 40, 0);
-    }*/
-    
-#if TASK_SELECT == 2 || TASK_SELECT == -1
-    pin(LOW); 
-#endif    
+     
   }
   
   /*
@@ -132,9 +113,6 @@ void CurrentTrain(void* localData, void* sharedData){
   */
   
   if(globalPtr->east == TRUE && !globalPtr->gridlock) {
-#if TASK_SELECT == 4 || TASK_SELECT == -1
-    pin(HIGH);
-#endif
     
     
     static unsigned int eastNoiseCount = 0;
@@ -223,9 +201,6 @@ void CurrentTrain(void* localData, void* sharedData){
       RIT128x96x4StringDraw(eastDisplay, 10, 40, 0);
     }*/
     
-#if TASK_SELECT == 4 || TASK_SELECT == -1
-    pin(LOW);
-#endif    
   }
   
   /*
@@ -235,9 +210,6 @@ void CurrentTrain(void* localData, void* sharedData){
   */
   
   if(globalPtr->west == TRUE && !globalPtr->gridlock) {
-#if TASK_SELECT == 3 || TASK_SELECT == -1
-    pin(HIGH);
-#endif
     
     
     static unsigned int westNoiseCount = 0;
@@ -306,10 +278,7 @@ void CurrentTrain(void* localData, void* sharedData){
       localPtr->toggleWest = FALSE;
       RIT128x96x4StringDraw(westDisplay, 10, 40, 0);
     }*/
-    
-#if TASK_SELECT == 3 || TASK_SELECT == -1
-    pin(LOW);
-#endif    
+      
   }
   
   /*
@@ -319,9 +288,6 @@ void CurrentTrain(void* localData, void* sharedData){
   */
   
   if(globalPtr->south == TRUE && !globalPtr->gridlock) {
-#if TASK_SELECT == 5 || TASK_SELECT == -1
-    pin(HIGH);
-#endif
     
     static unsigned int southNoiseCount = 0;
     static unsigned int southFlashCount = 0;
@@ -408,10 +374,7 @@ void CurrentTrain(void* localData, void* sharedData){
       localPtr->toggleSouth = FALSE;
       RIT128x96x4StringDraw(southDisplay, 10, 40, 0);
     }*/
-    
-#if TASK_SELECT == 4 || TASK_SELECT == -1
-    pin(LOW);
-#endif    
+      
   }
   //NOTE TO SELF: BUUUULLLSHIIIIIT
   if(globalPtr->globalCount >= globalPtr->traversalTime) {
