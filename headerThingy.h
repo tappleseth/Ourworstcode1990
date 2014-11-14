@@ -7,7 +7,7 @@
 #define TASK_SELECT             2
 #define HIGH                    TRUE
 #define LOW                     FALSE
-#define SOUND_ENABLE            0
+#define SOUND_ENABLE            1
 
 #define PORT_DATA               (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)  // full 8 bits of port used
 
@@ -19,7 +19,6 @@ typedef struct {
   void* localDataPtr;
   void* globalDataPtr;
   void* next;
-  void* previous;
 } boringTom;
 
 //GLOBAL VARIABLE DECLARATIONS
@@ -27,11 +26,11 @@ extern boringTom* head;
 extern boringTom* current;
 extern unsigned int tempCount;
 extern unsigned int frequencyCount;
-extern unsigned int seed;
-extern unsigned int TrainState;
-extern unsigned int TimerState;
-extern unsigned char globalCountArray[10];
-extern unsigned char passCountArray[4];
+extern int seed;
+extern int TrainState;
+extern int TimerState;
+//extern unsigned char globalCountArray[10];
+//extern unsigned char passCountArray[4];
 //extern unsigned char numCars[2];
 
 //FUNCTION PROTOTYPES
@@ -50,9 +49,8 @@ extern void SerialComTask(void* localData, void* globalData);
 extern void IntTimer0(void);
 extern int randomInteger(int a, int b);
 extern void Delay(int* foolioJenkins);
-extern void pin(bool);
 extern void IntGPIOe(void);
-extern void IntGPIOd(void);
+extern void portFcrap(void);
 
 extern void UARTIntHandler(void);
 extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
