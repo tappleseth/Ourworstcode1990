@@ -378,12 +378,13 @@ void CurrentTrain(void* localData, void* sharedData){
   }
   //NOTE TO SELF: BUUUULLLSHIIIIIT
   if(globalPtr->globalCount >= globalPtr->traversalTime) {
-    //PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
+      PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
       localPtr->toggleSouth = FALSE;
       localPtr->toggleWest = FALSE;
       localPtr->toggleEast = FALSE;
       localPtr->toggleNorth = FALSE;
       globalPtr->currentTrainComplete = TRUE;
+      
       
   }
   return;
