@@ -24,6 +24,11 @@ oho!
 -Thomas
 */
 void CurrentTrain(void* localData, void* sharedData){
+  
+#if TASK_SELECT == 4 || TASK_SELECT == -1
+  pin(HIGH);
+#endif
+  
   //PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
   //produce OLED/audio alarms
   //remove from task queue if no train is present
@@ -384,8 +389,12 @@ void CurrentTrain(void* localData, void* sharedData){
       localPtr->toggleEast = FALSE;
       localPtr->toggleNorth = FALSE;
       globalPtr->currentTrainComplete = TRUE;
-      
+      static char clearSafety[16] = "               ";
+      RIT128x96x4StringDraw(clearSafety, 10, 40, 0); 
       
   }
+#if TASK_SELECT == 4 || TASK_SELECT == -1
+  pin(LOW);
+#endif
   return;
 }
