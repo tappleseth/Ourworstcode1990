@@ -40,16 +40,15 @@ int main(){
 
 void Startup(void) {
   
- 
+  
   //STEP 1: OLED and PWM setup
   unsigned long ulPeriod;
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
-  RIT128x96x4Init(1000000);
   SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
   SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
   GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
-  ulPeriod = SysCtlClockGet() / 440;
+  ulPeriod = SysCtlClockGet() / 100;
   PWMGenConfigure(PWM0_BASE, PWM_GEN_0,PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
   PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod);
   PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, ulPeriod / 16);
@@ -58,16 +57,16 @@ void Startup(void) {
   //STEP 2: Timer setup
   //SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
   TimerState = 0;
-  TimerIntUnregister(TIMER0_BASE, TIMER_A);
-  TimerIntRegister(TIMER0_BASE, TIMER_A, IntTimer0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
-  TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet());    
-  IntEnable(INT_TIMER0A);
-  TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-  TimerEnable(TIMER0_BASE, TIMER_A);
+  TimerIntUnregister(TIMER1_BASE, TIMER_A);
+  TimerIntRegister(TIMER1_BASE, TIMER_A, IntTimer0);
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
+  TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC);
+  TimerLoadSet(TIMER1_BASE, TIMER_A, SysCtlClockGet());    
+  IntEnable(INT_TIMER1A);
+  TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+  TimerEnable(TIMER1_BASE, TIMER_A);
   
- // SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
+  // SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
   
   //STEP 3: Button pad setup
   TrainState=0;
@@ -93,7 +92,7 @@ void Startup(void) {
   IntEnable(INT_GPIOF);
   
   //STEP 5: UART setup
-
+  
   SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
   SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
   GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
@@ -102,17 +101,25 @@ void Startup(void) {
                        UART_CONFIG_PAR_NONE));
   IntEnable(INT_UART0); //fails here
   UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
-
+  
+  //STEP 6: pin setup
+  
+  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+  GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA);
+  
   return;
 }
 
 void TomSchedule(){
-  
+ 
+
   //data structs
   trainComData ourTrainComData;
   switchControlData ourSwitchControlData;
   currentTrainData ourCurrentTrainData;
   serialCommunicationsData ourSerialCommunicationsData;
+  
+  ourTrainComData.dummy = FALSE;
   
   ourCurrentTrainData.toggleEast = FALSE;
   ourCurrentTrainData.toggleNorth = FALSE;
@@ -123,7 +130,6 @@ void TomSchedule(){
   
   globalData ourGlobalData;
   ourGlobalData.east = FALSE;
-  ourGlobalData.stateTom = 0;
   ourGlobalData.globalCount = 0;
   ourGlobalData.gridlock = FALSE;
   ourGlobalData.north = FALSE;
@@ -170,22 +176,24 @@ void TomSchedule(){
   
   head = NULL;
   head->next = NULL;
-  //RIT128x96x4Init(1000000);
+  RIT128x96x4Init(1000000);
   static char flairTitle1[16] = "Applehansontaft";
   static char flairTitle2[14] = "Econo Freight";
   RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
   RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
-
+  
   //build initial stack
   addToStack(&serialThingyHell);
   addToStack(&trainComHell);
   
   static unsigned int justinCrazy = 0;
-   static char timeDisplay[10] = "AHT Time:";
+  static char timeDisplay[10] = "AHT Time:";
   
   static char globalCountArray[10] = "         ";
   while(1){
-    
+    #if TASK_SELECT == 5 || TASK_SELECT == -1
+      pin(HIGH);
+    #endif
     //traverse stack
     current = head;
     if (ourGlobalData.trainComComplete==TRUE){
@@ -205,7 +213,7 @@ void TomSchedule(){
     if (ourGlobalData.currentTrainComplete==TRUE){
       ourGlobalData.currentTrainComplete=FALSE; //reset for next time
       popFromStack(); //remove currentTrain
-       //reset TrainState in anticipation of next train
+      //reset TrainState in anticipation of next train
       addToStack(&trainComHell);
     }
     while (current != NULL){
@@ -214,33 +222,36 @@ void TomSchedule(){
     }
     while (!TimerState) {
       
-      }
+    }
     TimerState = 0;
     frequencyCount = tempCount;
     tempCount = 0;
     
-      justinCrazy = ourGlobalData.globalCount;
-      justinCrazy++;
-      ourGlobalData.globalCount = justinCrazy;
+    justinCrazy = ourGlobalData.globalCount;
+    justinCrazy++;
+    ourGlobalData.globalCount = justinCrazy;
     
-     
-      RIT128x96x4StringDraw(timeDisplay, 0, 80, 15);
-     
-      
-  int i = 8; 
-  
-  while(justinCrazy > 0) {
-    globalCountArray[i] = (justinCrazy%10) + 48;
-    justinCrazy = justinCrazy/10;
-    i--;     
-  }
-  globalCountArray[9] = '\0';
-  
-  
-  RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
     
+    RIT128x96x4StringDraw(timeDisplay, 0, 80, 15);
+    
+    
+    int i = 8; 
+    
+    while(justinCrazy > 0) {
+      globalCountArray[i] = (justinCrazy%10) + 48;
+      justinCrazy = justinCrazy/10;
+      i--;     
+    }
+    globalCountArray[9] = '\0';
+    
+    
+    RIT128x96x4StringDraw(globalCountArray, 65, 80, 15);
+    #if TASK_SELECT == 5 || TASK_SELECT == -1
+      pin(LOW);
+    #endif
   }
-  
+ 
+
 }
 
 
@@ -274,7 +285,7 @@ int randomInteger(int low, int high) {
 
 void IntTimer0(void) {
   //Clear the interrupt to avoid continuously looping here
-  TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+  TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
   
   TimerState = 1;
   
@@ -299,4 +310,12 @@ void portFcrap(void)
   //Clear the interrupt to avoid continuously looping here
   GPIOPinIntClear(GPIO_PORTF_BASE, GPIO_PIN_3);
   tempCount++;
+}
+
+void pin(bool status) {
+  if(status)
+    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x20);
+  else
+    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x00);
+  return;
 }
