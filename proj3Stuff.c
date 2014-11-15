@@ -44,6 +44,9 @@ int getStackSize(){
 }
 
 void NuTrainCom(void* localData, void* sharedData){
+#if TASK_SELECT == 1 || TASK_SELECT == -1
+  pin(HIGH);
+#endif
   globalData* globalPtr = (globalData*)sharedData;    
   //trainComData* localPtr = (trainComData*)localData;
   int direction = 0;
@@ -137,17 +140,20 @@ void NuTrainCom(void* localData, void* sharedData){
     tempPassengerCount = tempPassengerCount/10;
     z--;   
   }
-  passCountArray[3] = '\0';
+  //passCountArray[3] = '\0';
   
   RIT128x96x4StringDraw(passTitle, 10, 60, 15);
   RIT128x96x4StringDraw(passCountArray, 80, 60, 15);
   
-  } 
+  }
+#if TASK_SELECT == 1 || TASK_SELECT == -1
+  pin(LOW);
+#endif
   return;
 }
              //NOTE: currentTrain has its own best nest
 void NuSwitchControl(void* localData, void* sharedData){
-#if TASK_SELECT == 1 || TASK_SELECT == -1
+#if TASK_SELECT == 2 || TASK_SELECT == -1
   pin(HIGH);
 #endif
   
@@ -219,12 +225,15 @@ void NuSwitchControl(void* localData, void* sharedData){
     }
   }
   
-#if TASK_SELECT == 1 || TASK_SELECT == -1
+#if TASK_SELECT == 2 || TASK_SELECT == -1
   pin(LOW);
 #endif
 }
              
 void SerialComTask(void* localData, void* sharedData){
+#if TASK_SELECT == 3 || TASK_SELECT == -1
+  pin(HIGH);
+#endif
   globalData* globalPtr = (globalData*)sharedData;    
   //localData* localPtr = (localData*)localData;
   
@@ -331,5 +340,9 @@ void SerialComTask(void* localData, void* sharedData){
   }  
   UARTSend((unsigned char*)"\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
   for(int i=0; i<1600;i++);
+  
+#if TASK_SELECT == 3 || TASK_SELECT == -1
+  pin(LOW);
+#endif
   return;
 }
