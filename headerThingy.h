@@ -4,7 +4,7 @@
 
 #define MAX_QUEUE_LENGTH        6
 #define DELAY                   250000
-#define TASK_SELECT             2
+#define TASK_SELECT             4
 #define HIGH                    TRUE
 #define LOW                     FALSE
 #define SOUND_ENABLE            1
@@ -54,6 +54,8 @@ extern void portFcrap(void);
 
 extern void UARTIntHandler(void);
 extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
+
+extern void pin(bool);
 //END FUNCTION PROTOTYPES
 
 
@@ -73,7 +75,6 @@ typedef struct {
   bool south;
   bool gridlock;
   bool trainPresent;  
-  unsigned char stateTom;
   unsigned int globalCount;
   unsigned int trainSize;
   unsigned int traversalTime;
@@ -88,13 +89,7 @@ typedef struct {
 } globalData;
 
 typedef struct {
-  bool north;
-  bool east;
-  bool west;
-  bool  gridlock;
-  bool trainPresent;  
-  unsigned int trainSize;
-  unsigned int globalCount;
+  bool dummy;
 } trainComData;
 
 typedef struct {
@@ -109,7 +104,7 @@ typedef struct {
 } switchControlData;
 
 typedef struct {
-  bool dummy;
+  bool data;
 } serialCommunicationsData;
 
 #endif
