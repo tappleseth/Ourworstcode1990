@@ -1,244 +1,485 @@
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include "headerThingy.h"
+/*
+    FreeRTOS V7.0.1 - Copyright (C) 2011 Real Time Engineers Ltd.
+	
 
-#include "inc/hw_ints.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
+    ***************************************************************************
+     *                                                                       *
+     *    FreeRTOS tutorial books are available in pdf and paperback.        *
+     *    Complete, revised, and edited pdf reference manuals are also       *
+     *    available.                                                         *
+     *                                                                       *
+     *    Purchasing FreeRTOS documentation will not only help you, by       *
+     *    ensuring you get running as quickly as possible and with an        *
+     *    in-depth knowledge of how to use FreeRTOS, it will also help       *
+     *    the FreeRTOS project to continue with its mission of providing     *
+     *    professional grade, cross platform, de facto standard solutions    *
+     *    for microcontrollers - completely free of charge!                  *
+     *                                                                       *
+     *    >>> See http://www.FreeRTOS.org/Documentation for details. <<<     *
+     *                                                                       *
+     *    Thank you for using FreeRTOS, and thank you for your support!      *
+     *                                                                       *
+    ***************************************************************************
 
-#include "inc/lm3s8962.h"
-#include "driverlib/debug.h"
-#include "driverlib/sysctl.h"
-#include "drivers/rit128x96x4.h"
-#include "driverlib/timer.h"
-#include "driverlib/gpio.h"
-#include "driverlib/pwm.h"
-#include "driverlib/interrupt.h"
+
+    This file is part of the FreeRTOS distribution and has been modified to 
+    demonstrate three simple tasks running.
+
+    FreeRTOS is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License (version 2) as published by the
+    Free Software Foundation AND MODIFIED BY the FreeRTOS exception.
+    >>>NOTE<<< The modification to the GPL is included to allow you to
+    distribute a combined work that includes FreeRTOS without being obliged to
+    provide the source code for proprietary components outside of the FreeRTOS
+    kernel.  FreeRTOS is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+    more details. You should have received a copy of the GNU General Public
+    License and the FreeRTOS license exception along with FreeRTOS; if not it
+    can be viewed here: http://www.freertos.org/a00114.html and also obtained
+    by writing to Richard Barry, contact details for whom are available on the
+    FreeRTOS WEB site.
+
+    1 tab == 4 spaces!
+
+    http://www.FreeRTOS.org - Documentation, latest information, license and
+    contact details.
+
+    http://www.SafeRTOS.com - A version that is certified for use in safety
+    critical systems.
+
+    http://www.OpenRTOS.com - Commercial support, development, porting,
+    licensing and training services.
+*/
 
 
-int main(){
-  Startup();
-  //OKAY YOU FRAUDS, TIME TO IMPLEMENT AN ACTUAL STACK THINGY.
-  TomSchedule(); 
-  //THAT WAS FKIN EASY
-  return 0;
-}
-
-void Startup(void) {
-  // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-                 SYSCTL_XTAL_8MHZ);
-  
-  /*TIMER CONFIGURATION*/    
-  //Clear the default ISR handler and install IntTimer0 as the handler:
-  TimerIntUnregister(TIMER0_BASE, TIMER_A);
-  TimerIntRegister(TIMER0_BASE, TIMER_A, IntTimer0);
-  
-  //Enable Timer 0    
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
-  
-  //Configure Timer 0 and set the timebase to 1 second    
-  TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
-  TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet());    
-  
-  //Enable interrupts for Timer0 and activate it
-  IntEnable(INT_TIMER0A);
-  TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-  TimerEnable(TIMER0_BASE, TIMER_A);  
-  /*END TIMER CONFIGURATION*/
-  
-  //Set PWM Divide Ratio to 1
-  SysCtlPWMClockSet(SYSCTL_PWMDIV_1);
-  
-  //Set Device: PWM0 Enabled
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
-  
-  //Set GPIO Port: G Enabled
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
-  
-  //Tell Port G, Pin 1, to take input from PWM 0
-  GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
-  
-  //Set a 440 Hz frequency as u1Period
-  unsigned int ulPeriod = SysCtlClockGet() / 100;
-  
-  //Configure PWM0 in up-down count mode, no sync to clock
-  PWMGenConfigure(PWM0_BASE, PWM_GEN_0,
-                  PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
-  
-  //Set u1Period (440 Hz) as the period of PWM0
-  PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod);
-  
-  //Set PWM0, output 1 to a duty cycle of 1/8
-  PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, ulPeriod / 16);
-  
-  //Activate PWM0
-  PWMGenEnable(PWM0_BASE, PWM_GEN_0);   
-  PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-  
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA); 
-  
-  TimerState = 0;
-  
-  // Set the clocking to run directly from the crystal.
-  SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-                 SYSCTL_XTAL_8MHZ);
-  
-  //Clear the default ISR handler and install IntGPIOe as the handler:
-  GPIOPortIntUnregister(GPIO_PORTE_BASE);
-  GPIOPortIntRegister(GPIO_PORTE_BASE,IntGPIOe);
-  
-  //Enable GPIO port E, set pin 0 as an input
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);    
-  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, 0xF);
-  
-  //Activate the pull-up on GPIO port E
-  GPIOPadConfigSet(GPIO_PORTE_BASE, 0xF, GPIO_STRENGTH_2MA,
-                   GPIO_PIN_TYPE_STD_WPU);
-  
-  //Configure GPIO port E as triggering on falling edges
-  GPIOIntTypeSet(GPIO_PORTE_BASE, 0xF, GPIO_FALLING_EDGE);
-  
-  //Enable interrupts for GPIO port E
-  GPIOPinIntEnable(GPIO_PORTE_BASE, 0xF);
-  IntEnable(INT_GPIOE);
-
-  
-  return;
-}
-
-void TomSchedule(){
-  
-  //data structs
-  trainComData ourTrainComData;
-  switchControlData ourSwitchControlData;
-  currentTrainData ourCurrentTrainData;
-  
-  globalData ourGlobalData;
-  ourGlobalData.east = FALSE;
-  ourGlobalData.stateTom = 0;
-  ourGlobalData.fromDirection = 0; 
-  ourGlobalData.globalCount = 0;
-  ourGlobalData.gridlock = FALSE;
-  ourGlobalData.north = FALSE;
-  ourGlobalData.startTime = 0;
-  ourGlobalData.trainPresent = FALSE;
-  ourGlobalData.trainSize = 0;
-  ourGlobalData.traversalTime = 0;
-  ourGlobalData.west = FALSE;
-  ourGlobalData.currentTrainComplete = FALSE;
-  ourGlobalData.switchConComplete = FALSE;
-  ourGlobalData.trainComComplete = FALSE;
- 
-  
-  //pointer structs
-  boringTom trainComHell;
-  boringTom currentTrainHell;
-  boringTom switchControlHell;
-  boringTom serialThingyHell;
-  
-  trainComHell.justTrainTaskThings = NuTrainCom;
-  trainComHell.localDataPtr = (void*)&ourTrainComData;
-  trainComHell.globalDataPtr = (void*)&ourGlobalData;
-  
-  currentTrainHell.justTrainTaskThings = CurrentTrain;
-  currentTrainHell.localDataPtr = (void*)&ourTrainComData;
-  currentTrainHell.globalDataPtr = (void*)&ourGlobalData;
-  
-  switchControlHell.justTrainTaskThings = NuSwitchControl;
-  switchControlHell.localDataPtr = (void*)&ourSwitchControlData;
-  switchControlHell.globalDataPtr = (void*)&ourGlobalData;
-  
-  RIT128x96x4Init(1000000); 
-  
-  boringTom* head; 
-  head->next = NULL;
-  head->previous = NULL;
-  
-  static char flairTitle1[] = "Applehansontaft \0";
-  static char flairTitle2[] = "Discount Freight \0";
-  RIT128x96x4StringDraw(flairTitle1, 10, 10, 15);
-  RIT128x96x4StringDraw(flairTitle2, 10, 20, 15);
- static int checkSize = 0;
- 
- 
- /*typedef struct {
-  void (*justTrainTaskThings)(void*,void*);
-  void* localDataPtr;
-  void* globalDataPtr;
-  void* next;
-  void* previous;
-} boringTom;
+/*
+ * Creates all the application tasks, then starts the scheduler.  The WEB
+ * documentation provides more details of the standard demo application tasks.
+ * In addition to the standard demo tasks, the following tasks and tests are
+ * defined and/or created within this file:
+ *
+ * "OLED" task - the OLED task is a 'gatekeeper' task.  It is the only task that
+ * is permitted to access the display directly.  Other tasks wishing to write a
+ * message to the OLED send the message on a queue to the OLED task instead of
+ * accessing the OLED themselves.  The OLED task just blocks on the queue waiting
+ * for messages - waking and displaying the messages as they arrive.
+ *
+ * "Check" hook -  This only executes every five seconds from the tick hook.
+ * Its main function is to check that all the standard demo tasks are still
+ * operational.  Should any unexpected behaviour within a demo task be discovered
+ * the tick hook will write an error to the OLED (via the OLED task).  If all the
+ * demo tasks are executing with their expected behaviour then the check task
+ * writes PASS to the OLED (again via the OLED task), as described above.
+ *
+ * "uIP" task -  This is the task that handles the uIP stack.  All TCP/IP
+ * processing is performed in this task.
  */
- //build initial stack
- addToStack(&serialThingyHell);
- addToStack(&trainComHell);
-  while(1){
-  
- 
-}
-
-return;
-}
 
 
-int randomInteger(int low, int high) {
-  double randNum = 0.0;
-  int multiplier = 2743;
-  int addOn = 5923;
-  double max = INT_MAX + 1.0;
-  
-  int retVal = 0;
-  
-  if (low > high)
-    retVal = randomInteger(high, low);
-  else
-  {
-    seed = seed*multiplier + addOn;
-    randNum = seed;
-    
-    if (randNum <0)
-    {
-      randNum = randNum + max;
-    }
-    
-    randNum = randNum/max;
-    
-    retVal = ((int)((high-low+1)*randNum))+low;
-  }
-  
-  return retVal;
-}
 
-void pin(bool status) {
-  if(status)
-    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x20);
-  else
-    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x00);
-  return;
-}
 
-void IntTimer0(void) {
-  //Clear the interrupt to avoid continuously looping here
-  TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
-  
-  TimerState = 1;
-  
-  return;
-}
+/*************************************************************************
+ * Please ensure to read http://www.freertos.org/portlm3sx965.html
+ * which provides information on configuring and running this demo for the
+ * various Luminary Micro EKs.
+ *************************************************************************/
 
-//stolen wholesale from professor's provided code
-void IntGPIOe(void)
+/* Set the following option to 1 to include the WEB server in the build.  By
+default the WEB server is excluded to keep the compiled code size under the 32K
+limit imposed by the KickStart version of the IAR compiler.  The graphics
+libraries take up a lot of ROM space, hence including the graphics libraries
+and the TCP/IP stack together cannot be accommodated with the 32K size limit. */
+
+//  set this value to non 0 to include the web server
+
+#define mainINCLUDE_WEB_SERVER		0
+
+
+/* Standard includes. */
+#include <stdio.h>
+
+/* Scheduler includes. */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+
+/* Hardware library includes. */
+#include "hw_memmap.h"
+#include "hw_types.h"
+#include "hw_sysctl.h"
+#include "sysctl.h"
+#include "gpio.h"
+#include "grlib.h"
+#include "rit128x96x4.h"
+#include "osram128x64x4.h"
+#include "formike128x128x16.h"
+
+/* Demo app includes. */
+
+#include "lcd_message.h"
+#include "bitmap.h"
+
+
+/*-----------------------------------------------------------*/
+
+/* 
+  The time between cycles of the 'check' functionality (defined within the
+  tick hook. 
+*/
+#define mainCHECK_DELAY	( ( portTickType ) 5000 / portTICK_RATE_MS )
+
+// Size of the stack allocated to the uIP task.
+#define mainBASIC_WEB_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 3 )
+
+// The OLED task uses the sprintf function so requires a little more stack too.
+#define mainOLED_TASK_STACK_SIZE	    ( configMINIMAL_STACK_SIZE + 50 )
+
+//  Task priorities.
+#define mainQUEUE_POLL_PRIORITY		    ( tskIDLE_PRIORITY + 2 )
+#define mainCHECK_TASK_PRIORITY		    ( tskIDLE_PRIORITY + 3 )
+#define mainSEM_TEST_PRIORITY		    ( tskIDLE_PRIORITY + 1 )
+#define mainBLOCK_Q_PRIORITY		    ( tskIDLE_PRIORITY + 2 )
+#define mainCREATOR_TASK_PRIORITY           ( tskIDLE_PRIORITY + 3 )
+#define mainINTEGER_TASK_PRIORITY           ( tskIDLE_PRIORITY )
+#define mainGEN_QUEUE_TASK_PRIORITY	    ( tskIDLE_PRIORITY )
+
+
+//  The maximum number of messages that can be waiting for display at any one time.
+  #define mainOLED_QUEUE_SIZE					( 3 )
+
+// Dimensions the buffer into which the jitter time is written. 
+  #define mainMAX_MSG_LEN						25
+
+/* 
+  The period of the system clock in nano seconds.  This is used to calculate
+  the jitter time in nano seconds. 
+*/
+
+#define mainNS_PER_CLOCK ( ( unsigned portLONG ) ( ( 1.0 / ( double ) configCPU_CLOCK_HZ ) * 1000000000.0 ) )
+
+
+// Constants used when writing strings to the display.
+
+#define mainCHARACTER_HEIGHT		    ( 9 )
+#define mainMAX_ROWS_128		    ( mainCHARACTER_HEIGHT * 14 )
+#define mainMAX_ROWS_96			    ( mainCHARACTER_HEIGHT * 10 )
+#define mainMAX_ROWS_64			    ( mainCHARACTER_HEIGHT * 7 )
+#define mainFULL_SCALE			    ( 15 )
+#define ulSSI_FREQUENCY			    ( 3500000UL )
+
+/*-----------------------------------------------------------*/
+
+/*
+ * The task that handles the uIP stack.  All TCP/IP processing is performed in
+ * this task.
+ */
+extern void vuIP_Task( void *pvParameters );
+
+/*
+ * The display is written two by more than one task so is controlled by a
+ * 'gatekeeper' task.  This is the only task that is actually permitted to
+ * access the display directly.  Other tasks wanting to display a message send
+ * the message to the gatekeeper.
+ */
+
+static void vOLEDTask( void *pvParameters );
+
+/*
+ * Configure the hardware .
+ */
+static void prvSetupHardware( void );
+
+/*
+ * Configures the high frequency timers - those used to measure the timing
+ * jitter while the real time kernel is executing.
+ */
+extern void vSetupHighFrequencyTimer( void );
+
+/*
+ * Hook functions that can get called by the kernel.
+ */
+void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed portCHAR *pcTaskName );
+void vApplicationTickHook( void );
+
+/*
+  three dummy tasks of different priorities that simply run, announce 
+  themselves, then sleep
+*/
+
+void vTask1(void *vParameters);
+void vTask2(void *vParameters);
+void vTask3(void *vParameters);
+
+int globalTest = 0;
+
+/*-----------------------------------------------------------*/
+
+/* 
+  The queue used to send messages to the OLED task. 
+*/
+xQueueHandle xOLEDQueue;
+
+/*-----------------------------------------------------------*/
+
+
+/*************************************************************************
+ * Please ensure to read http://www.freertos.org/portlm3sx965.html
+ * which provides information on configuring and running this demo for the
+ * various Luminary Micro EKs.
+ *************************************************************************/
+
+unsigned int globalTom = 0;
+
+int main( void )
 {
-  //Clear the interrupt to avoid continuously looping here
-  GPIOPinIntClear(GPIO_PORTE_BASE, 0xF);
+    prvSetupHardware();
+
+    /*  
+        Create the queue used by the OLED task.  Messages for display on the OLED
+        are received via this queue. 
+    */
+    
+    xOLEDQueue = xQueueCreate( mainOLED_QUEUE_SIZE, sizeof( xOLEDMessage ) );
+    
+
+    /* 
+        Exclude some tasks if using the kickstart version to ensure we stay within
+        the 32K code size limit. 
+    */
+    
+    #if mainINCLUDE_WEB_SERVER != 0
+    {
+      /* 
+          Create the uIP task if running on a processor that includes a MAC and PHY. 
+      */
+      
+      if( SysCtlPeripheralPresent( SYSCTL_PERIPH_ETH ) )
+      {
+          xTaskCreate( vuIP_Task, ( signed portCHAR * ) "uIP", mainBASIC_WEB_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY - 1, NULL );
+      }
+    }
+    #endif
+    
+    
+    
+    /* Start the tasks */
+    
+    xTaskCreate( vOLEDTask, ( signed portCHAR * ) "OLED", mainOLED_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
+
+    //xTaskCreate(vTask1, "Task 1", 100,NULL, 1,NULL);
+   // xTaskCreate(vTask2, "Task 2", 100,NULL, 2,NULL);
+    xTaskCreate(vTask3, "Task 3", 100,NULL, 1,NULL);
+    
+    
+    
+    /* 
+      Configure the high frequency interrupt used to measure the interrupt
+      jitter time. 
+    */
+    
+    vSetupHighFrequencyTimer();
+
+    /* 
+      Start the scheduler. 
+    */
+    
+    vTaskStartScheduler();
+
+    /* Will only get here if there was insufficient memory to create the idle task. */
+    
+    return 0;
+}
+
+/*
+  three dummy tasks
+*/
+
+void vTask1(void *vParameters)
+{
+  xOLEDMessage xMessage;
+  volatile unsigned long ul;  
+  const char *T1Text = "Task 1 is running\n\r";
+
+  xMessage.pcMessage = "Bon Jour, Task 1";
   
-  //Set the Event State for GPIO pin 0
-  TrainState=GPIOPinRead(GPIO_PORTE_BASE, 0xF);
+  while(1)
+  {
+      //Send the message to the OLED gatekeeper for display.
+      xQueueSend( xOLEDQueue, &xMessage, 0 );
+      //xQueueSend( xOLEDQueue, &alsoMessage,0);
+      vTaskDelay(1000);
+  }
+}
+
+void vTask2(void *vParameters)
+{
+  xOLEDMessage xMessage;
+   
+  volatile unsigned long ul;  
+  const char *T1Text = "Task 2 is running\n\r";
   
-  //Switches are normally-high, so flip the polarity of the results:
-  TrainState=TrainState^0xF;  //You should work out why and how this works!
+  xMessage.pcMessage = "Bon Jour, Task 2";
+
+  while(1)
+  {
+     // Send the message to the OLED gatekeeper for display. 
+     xQueueSend( xOLEDQueue, &xMessage, 0 );
+    
+     vTaskDelay(3000);
+  }
+}
+
+void vTask3(void *vParameters)
+{
+  xOLEDMessage xMessage;
+  static unsigned int justinCrazy = 0;
+  volatile unsigned long ul;  
+  const char *T1Text = "Task 3 is running\n\r";
+  char globalCountArray[10] = "          ";
+  //xMessage.pcMessage = "Bon Jour, Task 3";
+  int i;
+  while(1)
+  {
+      //get number of ticks, mofos
+      globalTom = (unsigned int) xTaskGetTickCount();
+      
+      //convert current time to a char array format
+      justinCrazy = globalTom/1000;
+      i = 8;
+      while(justinCrazy > 0) {
+      globalCountArray[i] = (justinCrazy%10) + 48;
+      justinCrazy = justinCrazy/10;
+      i--;     
+    }
+    globalCountArray[9] = '\0';
+    
+    xMessage.pcMessage = globalCountArray;
+    // Send the message to the OLED gatekeeper for display. 
+    // xQueueSend( xOLEDQueue, &xMessage, 0 );
+    RIT128x96x4StringDraw(globalCountArray,10,10,15);
+      vTaskDelay(1000);
+  }
+}
+
+/*
+  the OLED Task
+*/
+
+void vOLEDTask( void *pvParameters )
+{
+    xOLEDMessage xMessage;
+    unsigned portLONG ulY, ulMaxY;
+    static portCHAR cMessage[ mainMAX_MSG_LEN ];
+    extern volatile unsigned portLONG ulMaxJitter;
+    unsigned portBASE_TYPE uxUnusedStackOnEntry;
+    const unsigned portCHAR *pucImage;
+
+// Functions to access the OLED. 
+
+    void ( *vOLEDInit )( unsigned portLONG ) = NULL;
+    void ( *vOLEDStringDraw )( const portCHAR *, unsigned portLONG, unsigned portLONG, unsigned portCHAR ) = NULL;
+    void ( *vOLEDImageDraw )( const unsigned portCHAR *, unsigned portLONG, unsigned portLONG, unsigned portLONG, unsigned portLONG ) = NULL;
+    void ( *vOLEDClear )( void ) = NULL;
+  
+  
+    vOLEDInit = RIT128x96x4Init;
+    vOLEDStringDraw = RIT128x96x4StringDraw;
+    vOLEDImageDraw = RIT128x96x4ImageDraw;
+    vOLEDClear = RIT128x96x4Clear;
+    ulMaxY = mainMAX_ROWS_96;
+    pucImage = pucBasicBitmap;
+              
+// Just for demo purposes.
+    uxUnusedStackOnEntry = uxTaskGetStackHighWaterMark( NULL );
+  
+    ulY = ulMaxY;
+    
+    /* Initialise the OLED  */
+    vOLEDInit( ulSSI_FREQUENCY );	
+    
+    while( 1 )
+    {
+      // Wait for a message to arrive that requires displaying.
+      
+      xQueueReceive( xOLEDQueue, &xMessage, portMAX_DELAY );
+  
+      // Write the message on the next available row. 
+      
+      ulY += mainCHARACTER_HEIGHT;
+      if( ulY >= ulMaxY )
+      {
+          ulY = mainCHARACTER_HEIGHT;
+          vOLEDClear();
+      }
+  
+      // Display the message  
+                      
+      sprintf( cMessage, "%s", xMessage.pcMessage);
+      
+      vOLEDStringDraw( cMessage, 0, ulY, mainFULL_SCALE );
+      
+  }
+}
+/*-----------------------------------------------------------*/
+
+void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed portCHAR *pcTaskName )
+{
+    ( void ) pxTask;
+    ( void ) pcTaskName;
+  
+    while( 1 );
+}
+
+/*-----------------------------------------------------------*/
+
+void prvSetupHardware( void )
+{
+    /* 
+      If running on Rev A2 silicon, turn the LDO voltage up to 2.75V.  This is
+      a workaround to allow the PLL to operate reliably. 
+    */
+  
+    if( DEVICE_IS_REVA2 )
+    {
+        SysCtlLDOSet( SYSCTL_LDO_2_75V );
+    }
+	
+    // Set the clocking to run from the PLL at 50 MHz
+    
+    SysCtlClockSet( SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ );
+    
+    /* 	
+      Enable Port F for Ethernet LEDs
+            LED0        Bit 3   Output
+            LED1        Bit 2   Output 
+    */
+    
+    SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
+    GPIODirModeSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3), GPIO_DIR_MODE_HW );
+    GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );	
+	
+}
+
+
+/*-----------------------------------------------------------*/
+
+void vApplicationTickHook( void )
+{
+    static xOLEDMessage xMessage = { "PASS" };
+    static unsigned portLONG ulTicksSinceLastDisplay = 0;
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
+    /* 
+      Called from every tick interrupt.  Have enough ticks passed to make it
+      time to perform our health status check again? 
+    */
+    
+    ulTicksSinceLastDisplay++;
+    if( ulTicksSinceLastDisplay >= mainCHECK_DELAY )
+    {
+       ulTicksSinceLastDisplay = 0;
+            
+    }
 }
