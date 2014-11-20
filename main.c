@@ -116,7 +116,7 @@ and the TCP/IP stack together cannot be accommodated with the 32K size limit. */
 
 /* Demo app includes. */
 
-#include "lcd_message.h"
+
 #include "bitmap.h"
 
 
@@ -206,13 +206,14 @@ void vApplicationTickHook( void );
   themselves, then sleep
 */
 
-void vTask1(void *vParameters);
-void vTask2(void *vParameters);
-void vTask3(void *vParameters);
-
+void TrainComTCB(void *vParameters);
+void SwitchConTCB(void *vParameters);
+void CurrentTrainTCB(void *vParameters);
+void SerialComTCB(void *vParameters);
+void ScheduleFaceCommander(void *vParameters);
 /*START GLOBAL VARIABLES*/
 
-int globalTest = 0;
+unsigned int globalCount = 0;
 bool north = FALSE;
 bool east = FALSE;
 bool west = FALSE;
@@ -222,7 +223,7 @@ bool trainPresent = FALSE;
 bool trainComComplete = FALSE;
 bool currentTrainComplete = FALSE;
 bool switchConComplete = FALSE;
-unsigned char fromDirection = 0;
+unsigned char fromDirection = 'X';
 double passengerCount = 0.0;
 //unsigned int globalCount = 0;
 unsigned int trainSize = 0;
@@ -242,6 +243,7 @@ unsigned int flashCount = 0;
 unsigned int noiseCount = 0;
 
 //extern int rand;
+int randd = 0;
 bool firstCycle = FALSE;
 
 //unsigned int startTime = 0;  
@@ -270,9 +272,7 @@ xQueueHandle xOLEDQueue;
  * various Luminary Micro EKs.
  *************************************************************************/
 
-unsigned int globalTom = 0;
-
-int main( void )
+  int main( void )
 {
     prvSetupHardware();
 
@@ -302,16 +302,20 @@ int main( void )
     }
     #endif
     
+    //INITIALIZE SOME BULLSHIT
+    //Startup();
     
     
     /* Start the tasks */
     
     xTaskCreate( vOLEDTask, ( signed portCHAR * ) "OLED", mainOLED_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
-    //xTaskCreate(vTask1, "Task 1", 100,NULL, 1,NULL);
-    xTaskCreate(vTask2, "Task 2", 100,NULL, 2,NULL);
-    xTaskCreate(vTask3, "Task 3", 100,NULL, 1,NULL);
-    //xTaskCreate(vTrainCom, "TrainCom", 100, NULL, 2, NULL);
+    xTaskCreate(TrainComTCB, "TrainComTCB", 100, NULL, 1, NULL);
+    xTaskCreate(SwitchConTCB, "SwitchConTCB",100,NULL, 2, NULL);
+    xTaskCreate(CurrentTrainTCB,"CurrentTrainTCB",100,NULL,3,NULL);
+    xTaskCreate(SerialComTCB,"SerialComTCB",100,NULL,4,NULL);
+    xTaskCreate(ScheduleFaceCommander,"ScheduleFaceCommander",100,NULL,4,NULL);
+    
     
     
     /* 
@@ -329,6 +333,9 @@ int main( void )
 
     /* Will only get here if there was insufficient memory to create the idle task. */
     
+
+    
+    
     return 0;
 }
 
@@ -336,43 +343,47 @@ int main( void )
   three dummy tasks
 */
 
-void vTask1(void *vParameters)
+void TrainComTCB(void *vParameters)
 {
-  xOLEDMessage xMessage;
-  volatile unsigned long ul;  
-  const char *T1Text = "Task 1 is running\n\r";
-
-  xMessage.pcMessage = "Bon Jour, Task 1";
-  
+ 
   while(1)
   {
-      //Send the message to the OLED gatekeeper for display.
-      xQueueSend( xOLEDQueue, &xMessage, 0 );
-      //xQueueSend( xOLEDQueue, &alsoMessage,0);
+      TrainCom();
       vTaskDelay(1000);
   }
 }
 
-void vTask2(void *vParameters)
+void SwitchConTCB(void *vParameters)
 {
-  xOLEDMessage xMessage;
-   
-  volatile unsigned long ul;  
-  const char *T1Text = "Task 2 is running\n\r";
   
-  xMessage.pcMessage = "TrainCom";
-  xMessage.ulX = 0;
-  xMessage.ulY = 40;
   while(1)
   {
-     // Send the message to the OLED gatekeeper for display. 
-     xQueueSend( xOLEDQueue, &xMessage, 0 );
-     TrainCom();
-     vTaskDelay(3000);
+     SwitchControl();
+     vTaskDelay(1000);
   }
 }
 
-void vTask3(void *vParameters)
+void CurrentTrainTCB(void *vParameters)
+{
+  
+  while(1)
+  {
+   // CurrentTrain();
+    vTaskDelay(1000);
+  }
+}
+
+void SerialComTCB(void *vParameters)
+{
+  
+  while(1)
+  {
+    //SerialCom();
+    vTaskDelay(1000);
+  }
+}
+
+void ScheduleFaceCommander(void *vParameters)
 {
   xOLEDMessage xMessage;
   static unsigned int justinCrazy = 0;
@@ -381,13 +392,37 @@ void vTask3(void *vParameters)
   char globalCountArray[10] = "          ";
   //xMessage.pcMessage = "Bon Jour, Task 3";
   int i;
+  
+  xOLEDMessage flair1;
+    flair1.pcMessage = "Applehansontaft";
+    flair1.ulX = 10;
+    flair1.ulY = 10;
+    flair1.brightness = 10;
+    
+    xOLEDMessage flair2;
+    flair2.pcMessage = "Fail Freight";
+    flair2.ulX = 10;
+    flair2.ulY = 20;
+    flair2.brightness = 10;
+    
+    xQueueSend( xOLEDQueue, &flair1, 0 );
+    xQueueSend( xOLEDQueue, &flair2, 0 );
+    
+    xOLEDMessage timeTitle;
+    timeTitle.pcMessage = "Time: ";
+    timeTitle.ulX = 10;
+    timeTitle.ulY = 80;
+    timeTitle.brightness = 10;
+    
+    xQueueSend( xOLEDQueue, &timeTitle, 0 );
+    
   while(1)
   {
       //get number of ticks, mofos
-      globalTom = (unsigned int) xTaskGetTickCount();
+      globalCount = (unsigned int) xTaskGetTickCount();
       
       //convert current time to a char array format
-      justinCrazy = globalTom/1000;
+      justinCrazy = globalCount/1000;
       i = 8;
       while(justinCrazy > 0) {
       globalCountArray[i] = (justinCrazy%10) + 48;
@@ -397,9 +432,12 @@ void vTask3(void *vParameters)
     globalCountArray[9] = '\0';
     
     xMessage.pcMessage = globalCountArray;
+    xMessage.ulX = 60;
+    xMessage.ulY = 80;
+    xMessage.brightness = 15;
     // Send the message to the OLED gatekeeper for display. 
-    // xQueueSend( xOLEDQueue, &xMessage, 0 );
-    RIT128x96x4StringDraw(globalCountArray,10,10,15);
+    xQueueSend( xOLEDQueue, &xMessage, 0 );
+    //RIT128x96x4StringDraw(globalCountArray,10,10,15);
       vTaskDelay(1000);
   }
 }
@@ -460,7 +498,7 @@ void vOLEDTask( void *pvParameters )
                       
       sprintf( cMessage, "%s", xMessage.pcMessage);
       
-      vOLEDStringDraw( cMessage, xMessage.ulX, xMessage.ulY, mainFULL_SCALE );
+      vOLEDStringDraw( cMessage, xMessage.ulX, xMessage.ulY, xMessage.brightness);
       
   }
 }
@@ -498,7 +536,7 @@ void prvSetupHardware( void )
             LED1        Bit 2   Output 
     */
     
-    SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
+   SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
     GPIODirModeSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3), GPIO_DIR_MODE_HW );
     GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );	
 	
@@ -525,3 +563,41 @@ void vApplicationTickHook( void )
             
     }
 }
+void IntGPIOf(void)
+{
+  //Clear the interrupt to avoid continuously looping here
+  GPIOPinIntClear(GPIO_PORTF_BASE, GPIO_PIN_3);
+  tempCount++;
+}
+
+void pin(bool status) {
+  if(status)
+    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x20);
+  else
+    GPIOPinWrite(GPIO_PORTD_BASE, PORT_DATA, 0x00);
+  return;
+}
+
+//stolen wholesale from professor's provided code
+void IntGPIOe(void)
+{
+  //Clear the interrupt to avoid continuously looping here
+  GPIOPinIntClear(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
+  
+  //Set the Event State for GPIO pin 0
+  TrainState=GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
+  
+  //Switches are normally-high, so flip the polarity of the results:
+  TrainState=TrainState^0xF;  //You should work out why and how this works!
+}
+
+/*
+void IntTimer0(void) {
+  //Clear the interrupt to avoid continuously looping here
+  TimerIntClear(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
+  
+  TimerState = 1;
+  
+  return;
+}
+*/
