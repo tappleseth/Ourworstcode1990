@@ -5,15 +5,39 @@ void TrainCom(void){
     pin(HIGH);
   #endif
     
-  static char idleState[22] = "Tracks Idle         ";
+    
+  xOLEDMessage fromNorth;
+  fromNorth.pcMessage =  "From: North";
+  fromNorth.ulX = 10;
+  fromNorth.ulY = 30;
+  fromNorth.brightness = 15;
   
-  static char fromNorth[12] = "From: North";
-  static char fromSouth[12] = "From: South";
-  static char fromWest[12] = "From: West ";
-  static char fromEast[12] = "From: East ";
+  xOLEDMessage fromSouth;
+  fromSouth.pcMessage =  "From: South";
+  fromSouth.ulX = 10;
+  fromSouth.ulY = 30;
+  fromSouth.brightness = 15;
+  
+  xOLEDMessage fromWest;
+  fromWest.pcMessage =  "From: West ";
+  fromWest.ulX = 10;
+  fromWest.ulY = 30;
+  fromWest.brightness = 15;
+  
+  xOLEDMessage fromEast;
+  fromEast.pcMessage =  "From: East ";
+  fromEast.ulX = 10;
+  fromEast.ulY = 30;
+  fromEast.brightness = 15;
+  
+  xOLEDMessage tracksIdle;  
+  tracksIdle.pcMessage = "Tracks Idle         ";
+  tracksIdle.ulX = 10;
+  tracksIdle.ulY = 30;
+  tracksIdle.brightness = 15;
   
   if (fromDirection == 'X'){
-    RIT128x96x4StringDraw(idleState, 10, 30, 15);
+    xQueueSend( xOLEDQueue, &tracksIdle, 0 );
   }
   
   //IF !trainPresent and some button was pressed, THEN generate train
@@ -25,20 +49,20 @@ void TrainCom(void){
     if (TrainState == 1){
       fromDirection = 'N';
       
-      RIT128x96x4StringDraw(fromNorth, 10, 30, 15);
+      xQueueSend( xOLEDQueue, &fromNorth, 0 );
       
     } else if (TrainState == 2){
       fromDirection = 'S';
       
-      RIT128x96x4StringDraw(fromSouth, 10, 30, 15);
+      xQueueSend( xOLEDQueue, &fromSouth, 0 );
     }  else if (TrainState == 4){
       fromDirection = 'W';
       
-      RIT128x96x4StringDraw(fromWest, 10, 30, 15);
+      xQueueSend( xOLEDQueue, &fromWest, 0 );
     } else {
       fromDirection = 'E';
       
-      RIT128x96x4StringDraw(fromEast, 10, 30, 15);
+     xQueueSend( xOLEDQueue, &fromEast, 0 );
     }
     
     east = FALSE;
@@ -60,20 +84,37 @@ void TrainCom(void){
     
     // step 3: generate train size
     //trainSize = randomInteger(2,9);    
-    char numCars[2] = {48+ trainSize,'\0'};
-    //static char testPhail[] = " ";
+    char numCarss[] = {48+ trainSize,'\0'};
+    xOLEDMessage numCars;
+    numCars.pcMessage = numCarss;
+    numCars.ulX = 80;
+    numCars.ulY = 50;
+    numCars.brightness = 15;
+    
+    xOLEDMessage TrainSize;
+    TrainSize.pcMessage = "Train Size:";
+    TrainSize.ulX = 10;
+    TrainSize.ulY = 50;
+    TrainSize.brightness = 15;
+    
     // step 4: print things
-    static char waffleThingy[12] = "Train Size:";
-    RIT128x96x4StringDraw(waffleThingy, 10, 50, 15);
-    RIT128x96x4StringDraw(numCars, 80, 50, 15);
+    xQueueSend( xOLEDQueue, &TrainSize, 0 );
+    xQueueSend( xOLEDQueue, &numCars, 0 );
     
     //step 5: set flag to pop this mother from the stack
     trainComComplete = TRUE;
     
     
     //step 6: do passengerCount things
+    xOLEDMessage PassTitle;
+    PassTitle.pcMessage = "Passengers:";
+    PassTitle.ulX = 10;
+    PassTitle.ulY = 60;
+    PassTitle.brightness = 15;
+    
+    
+    
     char passCountArray[4] = "   ";
-    static char passTitle[12] = "Passengers:";
     int z = 2;
     
     passengerCount = (double) 300.0*((frequencyCount-1000.0)/1000.0);
@@ -86,8 +127,14 @@ void TrainCom(void){
     }
     //passCountArray[3] = '\0';
     
-    RIT128x96x4StringDraw(passTitle, 10, 60, 15);
-    RIT128x96x4StringDraw(passCountArray, 80, 60, 15);
+    xOLEDMessage Passengers;
+    Passengers.pcMessage = passCountArray;
+    Passengers.ulX = 80;
+    Passengers.ulY = 60;
+    Passengers.brightness = 15;
+    
+    xQueueSend( xOLEDQueue, &PassTitle, 0 );
+    xQueueSend( xOLEDQueue, &Passengers, 0 );
   }
   
   #if TASK_SELECT == 1 || TASK_SELECT == -1
