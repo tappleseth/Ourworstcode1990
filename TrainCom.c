@@ -1,11 +1,6 @@
 #include "headerThingy.h"
-
-void TrainCom(void){
-  #if TASK_SELECT == 1 || TASK_SELECT == -1
-    pin(HIGH);
-  #endif
-    
-    
+void TrainComTCB(void *vParameters)
+{
   xOLEDMessage fromNorth;
   fromNorth.pcMessage =  "From: North";
   fromNorth.ulX = 10;
@@ -35,6 +30,17 @@ void TrainCom(void){
   tracksIdle.ulX = 10;
   tracksIdle.ulY = 30;
   tracksIdle.brightness = 15;
+ 
+  while(1)
+  {
+
+  //static int i = 0;
+  
+  if(globalCount == 5000) {
+    TrainState = 1;   
+  }
+  
+ // i++;
   
   if (fromDirection == 'X'){
     xQueueSend( xOLEDQueue, &tracksIdle, 0 );
@@ -71,7 +77,7 @@ void TrainCom(void){
     south = FALSE;
     
     // step 2: generate TO train direction
-    //direction = randomInteger(0, 3);
+    direction = randomInteger(0, 3);
     
     if(direction == 0)
       east = TRUE;
@@ -83,7 +89,7 @@ void TrainCom(void){
       south = TRUE;
     
     // step 3: generate train size
-    //trainSize = randomInteger(2,9);    
+    trainSize = randomInteger(2,9);    
     char numCarss[] = {48+ trainSize,'\0'};
     xOLEDMessage numCars;
     numCars.pcMessage = numCarss;
@@ -135,10 +141,12 @@ void TrainCom(void){
     
     xQueueSend( xOLEDQueue, &PassTitle, 0 );
     xQueueSend( xOLEDQueue, &Passengers, 0 );
+    
+    /*CHANGE THIS MOTHER FUCKKKKKKKERSSSSSSS*/
+    TrainState = 0;
   }
   
-  #if TASK_SELECT == 1 || TASK_SELECT == -1
-    pin(LOW);
-  #endif
-  return;
+   vTaskDelay(1000);
+  }
+  
 }
