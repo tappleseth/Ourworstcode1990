@@ -23,6 +23,7 @@
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
+#include "lcd_message.h"
 
 #define MAX_QUEUE_LENGTH        6
 #define TASK_SELECT             4
@@ -44,6 +45,8 @@ extern unsigned int frequencyCount;
 extern unsigned int TimerState;
 extern unsigned int TrainState;
 extern int seed;
+
+extern xQueueHandle xOLEDQueue;
 
 //FUNCTION PROTOTYPES
 extern void Startup(void);
@@ -101,7 +104,7 @@ extern unsigned int brightness;
 extern unsigned int flashCount;
 extern unsigned int noiseCount;
 
-//extern int rand;
+extern int randd;
 extern bool firstCycle;
 extern unsigned int brightness;
 extern unsigned int startTime;  
