@@ -10,7 +10,7 @@
 #include "C:\StellarisWare\inc\hw_memmap.h"
 #include "C:\StellarisWare\inc\hw_types.h"
 
-#include "C:\StellarisWare\inc\lm3s8962.h"
+//#include "C:\StellarisWare\inc\lm3s8962.h"
 #include "C:\StellarisWare\driverlib\debug.h"
 #include "C:\StellarisWare\driverlib\sysctl.h"
 #include "C:\StellarisWare\boards\ek-lm3s8962\drivers\rit128x96x4.h"
@@ -19,6 +19,10 @@
 #include "C:\StellarisWare\driverlib\pwm.h"
 #include "C:\StellarisWare\driverlib\interrupt.h"
 #include "C:\StellarisWare\driverlib\uart.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "queue.h"
 
 #define MAX_QUEUE_LENGTH        6
 #define TASK_SELECT             4
