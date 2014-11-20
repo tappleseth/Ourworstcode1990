@@ -100,10 +100,8 @@ and the TCP/IP stack together cannot be accommodated with the 32K size limit. */
 #include <stdio.h>
 
 /* Scheduler includes. */
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "semphr.h"
+
+#include "headerThingy.h"
 
 /* Hardware library includes. */
 #include "hw_memmap.h"
@@ -212,7 +210,49 @@ void vTask1(void *vParameters);
 void vTask2(void *vParameters);
 void vTask3(void *vParameters);
 
+/*START GLOBAL VARIABLES*/
+
 int globalTest = 0;
+bool north = FALSE;
+bool east = FALSE;
+bool west = FALSE;
+bool south = FALSE;
+bool gridlock = FALSE;
+bool trainPresent = FALSE;
+bool trainComComplete = FALSE;
+bool currentTrainComplete = FALSE;
+bool switchConComplete = FALSE;
+unsigned char fromDirection = 0;
+double passengerCount = 0.0;
+//unsigned int globalCount = 0;
+unsigned int trainSize = 0;
+unsigned int traversalTime = 0;
+unsigned int gridlockTime = 0;
+unsigned int startTime = 0;
+
+unsigned int direction = 0;
+
+bool toggleNorth = FALSE;
+bool toggleSouth = FALSE;
+bool toggleWest = FALSE;
+bool toggleEast = FALSE;
+  
+unsigned int brightness = 0;
+unsigned int flashCount = 0;
+unsigned int noiseCount = 0;
+
+//extern int rand;
+bool firstCycle = FALSE;
+
+//unsigned int startTime = 0;  
+
+unsigned int tempCount = 0;
+unsigned int frequencyCount = 0;
+unsigned int TimerState = 0;
+unsigned int TrainState = 0;
+int seed = 1;
+
+/*END GLOBAL VARIABLES*/
 
 /*-----------------------------------------------------------*/
 
@@ -269,9 +309,9 @@ int main( void )
     xTaskCreate( vOLEDTask, ( signed portCHAR * ) "OLED", mainOLED_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
     //xTaskCreate(vTask1, "Task 1", 100,NULL, 1,NULL);
-   // xTaskCreate(vTask2, "Task 2", 100,NULL, 2,NULL);
+    xTaskCreate(vTask2, "Task 2", 100,NULL, 2,NULL);
     xTaskCreate(vTask3, "Task 3", 100,NULL, 1,NULL);
-    
+    //xTaskCreate(vTrainCom, "TrainCom", 100, NULL, 2, NULL);
     
     
     /* 
@@ -320,13 +360,14 @@ void vTask2(void *vParameters)
   volatile unsigned long ul;  
   const char *T1Text = "Task 2 is running\n\r";
   
-  xMessage.pcMessage = "Bon Jour, Task 2";
-
+  xMessage.pcMessage = "TrainCom";
+  xMessage.ulX = 0;
+  xMessage.ulY = 40;
   while(1)
   {
      // Send the message to the OLED gatekeeper for display. 
      xQueueSend( xOLEDQueue, &xMessage, 0 );
-    
+     TrainCom();
      vTaskDelay(3000);
   }
 }
@@ -407,18 +448,19 @@ void vOLEDTask( void *pvParameters )
   
       // Write the message on the next available row. 
       
-      ulY += mainCHARACTER_HEIGHT;
+      /*ulY += mainCHARACTER_HEIGHT;
       if( ulY >= ulMaxY )
       {
           ulY = mainCHARACTER_HEIGHT;
           vOLEDClear();
-      }
+      }*/
+      
   
       // Display the message  
                       
       sprintf( cMessage, "%s", xMessage.pcMessage);
       
-      vOLEDStringDraw( cMessage, 0, ulY, mainFULL_SCALE );
+      vOLEDStringDraw( cMessage, xMessage.ulX, xMessage.ulY, mainFULL_SCALE );
       
   }
 }
