@@ -1,21 +1,21 @@
 #include "headerThingy.h"
 
-void SwitchControl(void){
-#if TASK_SELECT == 2 || TASK_SELECT == -1
-  pin(HIGH);
-#endif
-  
- 
-  
-  randd = 0;
-  brightness = 15;
-  
-  xOLEDMessage gridlockDisplay;
+void SwitchConTCB(void *vParameters)
+{
+   xOLEDMessage gridlockDisplay;
   gridlockDisplay.pcMessage = "GRIDLOCK!";
   gridlockDisplay.ulX = 10;
   gridlockDisplay.ulY = 40;
   gridlockDisplay.brightness = 15;
   
+  int randd = 0;
+  
+  while(1)
+  {
+    if (trainPresent==TRUE) {
+     
+    
+    randd = 0;
   //CASE 1
   //train just generated, gridlock is false
   if(!gridlock && trainPresent && firstCycle) {
@@ -66,8 +66,9 @@ void SwitchControl(void){
       PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
     }
   }
+   
   
-#if TASK_SELECT == 2 || TASK_SELECT == -1
-  pin(LOW);
-#endif
+    }
+    vTaskDelay(1000);
+}
 }
