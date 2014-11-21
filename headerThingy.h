@@ -1,75 +1,140 @@
-#include "headerThingy.h"
+#ifndef HEADERTHINGY_H
+#define HEADERTHINGY_H
 
-void Startup(void) {
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+
+#include "C:\StellarisWare\inc\hw_ints.h"
+#include "C:\StellarisWare\inc\hw_memmap.h"
+#include "C:\StellarisWare\inc\hw_types.h"
+
+//#include "C:\StellarisWare\inc\lm3s8962.h"
+#include "C:\StellarisWare\driverlib\debug.h"
+#include "C:\StellarisWare\driverlib\sysctl.h"
+#include "C:\StellarisWare\boards\ek-lm3s8962\drivers\rit128x96x4.h"
+#include "C:\StellarisWare\driverlib\timer.h"
+#include "C:\StellarisWare\driverlib\gpio.h"
+#include "C:\StellarisWare\driverlib\pwm.h"
+#include "C:\StellarisWare\driverlib\interrupt.h"
+#include "C:\StellarisWare\driverlib\uart.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "queue.h"
+#include "lcd_message.h"
+
+
+
+#include "hw_sysctl.h"
+
+
+#include "grlib.h"
+
+#include "osram128x64x4.h"
+#include "formike128x128x16.h"
+
+//#include "bitmap.h"
+
+#define MAX_QUEUE_LENGTH        6
+#define TASK_SELECT             4
+#define HIGH                    TRUE
+#define LOW                     FALSE
+#define SOUND_ENABLE            1
+
+#define PORT_DATA               (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7)  // full 8 bits of port used
+
+//PRIMITIVE TYPE DEFINITION
+typedef enum {FALSE = 0, TRUE = 1} bool;
+
+
+//SEMAPHORE FUN LAND
+extern bool TrainComActive;
+extern bool SwitchConActive;
+extern bool CurrentTrainActive;
+//extern bool SerialComActive;
+
+
+//GLOBAL VARIABLE DECLARATIONS
+
+
+extern unsigned int tempCount;
+extern unsigned int frequencyCount;
+extern unsigned int TimerState;
+extern unsigned int TrainState;
+extern int seed;
+
+extern xQueueHandle xOLEDQueue;
+
+//FUNCTION PROTOTYPES
+extern void Startup(void);
+/*TOM RTOS STUFF
+*/
+
+//we'll need these TaskHandles to suspend/resume tasks later
+
+extern  xTaskHandle vTrainCom;
+extern  xTaskHandle vSwitchCon;
+extern  xTaskHandle vCurrentTrain;
+extern  xTaskHandle vSerialCom;
+extern  xTaskHandle vSchedule;
+//extern int getStackSize(void);
+//extern void popFromStack(void);
+//extern void Schedule(void);
+
+extern void TrainCom(void *vParameters);
+extern void CurrentTrain(void *vParameters);
+extern void SwitchControl(void *vParameters);
+extern void SerialCom(void *vParameters);
+
+extern void IntTimer0(void);
+extern int randomInteger(int a, int b);
+extern void IntGPIOe(void);
+extern void IntGPIOf(void);
+
+extern void UARTIntHandler(void);
+extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
+
+extern void pin(bool);
+//END FUNCTION PROTOTYPES
+
+//END GLOBAL VARIABLE DECLARATIONS
+
+//STRUCT DEFINITIONS
+ 
+extern bool north;
+extern bool east;
+extern bool west;
+extern bool south;
+extern bool gridlock;
+extern bool trainPresent;
+extern bool trainComComplete;
+extern bool currentTrainComplete;
+extern bool switchConComplete;
+extern unsigned char fromDirection;
+extern double passengerCount;
+extern unsigned int globalCount;
+extern unsigned int trainSize;
+extern unsigned int traversalTime;
+extern unsigned int gridlockTime;
+extern unsigned int startTime;
+
+extern unsigned int direction;
+
+extern bool toggleNorth;
+extern bool toggleSouth;
+extern bool toggleWest;
+extern bool toggleEast;
   
-  //STEP 1: OLED and PWM setup
-  unsigned long ulPeriod;
-  //SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
-  SysCtlPWMClockSet(SYSCTL_PWMDIV_1); 
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOG);
-  GPIOPinTypePWM(GPIO_PORTG_BASE, GPIO_PIN_1);
-  ulPeriod = SysCtlClockGet() / 14000;
-  PWMGenConfigure(PWM0_BASE, PWM_GEN_0,PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
-  PWMGenPeriodSet(PWM0_BASE, PWM_GEN_0, ulPeriod);
-  PWMPulseWidthSet(PWM0_BASE, PWM_OUT_1, ulPeriod / 16);
-  PWMGenEnable(PWM0_BASE, PWM_GEN_0); 
-  
-  
-  //STEP 2: Timer setup
-  //SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
-  /*TimerState = 0;
-  TimerIntUnregister(TIMER1_BASE, TIMER_A);
-  TimerIntRegister(TIMER1_BASE, TIMER_A, IntTimer0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER1);
-  TimerConfigure(TIMER1_BASE, TIMER_CFG_PERIODIC);
-  TimerLoadSet(TIMER1_BASE, TIMER_A, SysCtlClockGet());    
-  IntEnable(INT_TIMER1A);
-  TimerIntEnable(TIMER1_BASE, TIMER_TIMA_TIMEOUT);
-  TimerEnable(TIMER1_BASE, TIMER_A);*/
-  
-  // SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_8MHZ);
-  
-  //STEP 3: Button pad setup 
-  TrainState = 0;
-  GPIOPortIntUnregister(GPIO_PORTE_BASE);
-  GPIOPortIntRegister(GPIO_PORTE_BASE,IntGPIOe);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);    
-  GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
-  GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 , GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
-  GPIOIntTypeSet(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 , GPIO_FALLING_EDGE);
-  GPIOPinIntEnable(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
-  IntEnable(INT_GPIOE);
-  
-  IntPrioritySet( INT_GPIOE, configKERNEL_INTERRUPT_PRIORITY);
-  
-  //STEP 4: Frequency count setup
- /* tempCount = 0;
-  frequencyCount = 0;
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);       
-  GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_3);
-  //GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
-  GPIOPortIntUnregister(GPIO_PORTF_BASE);
-  GPIOPortIntRegister(GPIO_PORTF_BASE,IntGPIOf);
-  GPIOIntTypeSet(GPIO_PORTF_BASE, GPIO_PIN_3, GPIO_RISING_EDGE);
-  GPIOPinIntEnable(GPIO_PORTF_BASE, GPIO_PIN_3);
-  IntEnable(INT_GPIOF);*/
-  
-  //STEP 5: UART setup  
- SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-  GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-  UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
-                      (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-                       UART_CONFIG_PAR_NONE));
-  IntEnable(INT_UART0); //fails here
-  UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
-  
-  IntPrioritySet( INT_UART0, configKERNEL_INTERRUPT_PRIORITY);
-  
-  //STEP 6: pin setup  
-  /*SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-  GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, PORT_DATA);*/
-  
-  return;
-}
+extern unsigned int brightness;
+extern unsigned int flashCount;
+extern unsigned int noiseCount;
+
+extern int randd;
+extern bool firstCycle;
+extern unsigned int brightness;
+extern unsigned int startTime;  
+
+#endif
+//END STRUCT DEFINITIONS
