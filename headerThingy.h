@@ -25,6 +25,18 @@
 #include "queue.h"
 #include "lcd_message.h"
 
+
+
+#include "hw_sysctl.h"
+
+
+#include "grlib.h"
+
+#include "osram128x64x4.h"
+#include "formike128x128x16.h"
+
+//#include "bitmap.h"
+
 #define MAX_QUEUE_LENGTH        6
 #define TASK_SELECT             4
 #define HIGH                    TRUE
@@ -35,6 +47,13 @@
 
 //PRIMITIVE TYPE DEFINITION
 typedef enum {FALSE = 0, TRUE = 1} bool;
+
+
+//SEMAPHORE FUN LAND
+extern bool TrainComActive;
+extern bool SwitchConActive;
+extern bool CurrentTrainActive;
+//extern bool SerialComActive;
 
 
 //GLOBAL VARIABLE DECLARATIONS
@@ -50,16 +69,24 @@ extern xQueueHandle xOLEDQueue;
 
 //FUNCTION PROTOTYPES
 extern void Startup(void);
+/*TOM RTOS STUFF
+*/
 
+//we'll need these TaskHandles to suspend/resume tasks later
 
-extern int getStackSize(void);
-extern void popFromStack(void);
-extern void Schedule(void);
+extern  xTaskHandle vTrainCom;
+extern  xTaskHandle vSwitchCon;
+extern  xTaskHandle vCurrentTrain;
+extern  xTaskHandle vSerialCom;
+extern  xTaskHandle vSchedule;
+//extern int getStackSize(void);
+//extern void popFromStack(void);
+//extern void Schedule(void);
 
-extern void TrainCom(void);
-extern void CurrentTrain(void);
-extern void SwitchControl(void);
-extern void SerialCom(void);
+extern void TrainCom(void *vParameters);
+extern void CurrentTrain(void *vParameters);
+extern void SwitchControl(void *vParameters);
+extern void SerialCom(void *vParameters);
 
 extern void IntTimer0(void);
 extern int randomInteger(int a, int b);
