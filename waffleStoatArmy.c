@@ -42,64 +42,64 @@ void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount)
 
 void SerialCom(void *vParameters){
   
-
+  
   while(1){
-  //for(int i=0; i<1600;i++);
+  vTaskDelay(5);
   //UARTSend("With love\r\n",11);
   
   if(fromDirection == 'N') {
     UARTSend((unsigned char*)"From: North\r\n", 15);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }
   if(fromDirection == 'E') {
     UARTSend((unsigned char*)"From: East\r\n", 14);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }
   if(fromDirection == 'S') {
     UARTSend((unsigned char*)"From: South\r\n", 15);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }
   if(fromDirection == 'W') {
     UARTSend((unsigned char*)"From: West\r\n", 14);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }  
   if(fromDirection == 'X') {
     UARTSend((unsigned char*)"Tracks Idle\r\n", 13);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }  
   
   if (!gridlock){
     if(north) {
       UARTSend((unsigned char*)"To: North\r\n", 11);
-      for(int i=0; i<1600;i++);
+      vTaskDelay(5);
     }
     if(east) {
       UARTSend((unsigned char*)"To: East\r\n", 10);
-      for(int i=0; i<1600;i++);
+      vTaskDelay(5);
     }
     if(south) {
       UARTSend((unsigned char*)"To: South\r\n", 11);
-      for(int i=0; i<1600;i++);
+      vTaskDelay(5);
     }
     if(west) {
       UARTSend((unsigned char*)"To: West\r\n", 10);
-      for(int i=0; i<1600;i++);
+      vTaskDelay(5);
     }
   } else {
     UARTSend((unsigned char*)"GRIDLOCK!!\r\n", 12);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }
   
   if(trainSize) {
     unsigned char godDamnit;
     godDamnit = 48 + trainSize;
-    for(int i=0; i<3000;i++);
+    vTaskDelay(5);
     UARTSend("Train Size: ", 12);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend(&godDamnit, 1);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend("\r\n",2);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }
  if(passengerCount) {
    
@@ -116,18 +116,18 @@ void SerialCom(void *vParameters){
     i--;     
   }
     UARTSend("Passengers: ", 12);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend(passCountArray, 4);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend("\r\n",2);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }  
   if(globalCount) {
     
     unsigned char globalCountArray[] = "          ";
     
     
-    int justinCrazy = globalCount;
+    int justinCrazy = globalCount / 1000;
     
     int i = 9; 
   
@@ -137,14 +137,13 @@ void SerialCom(void *vParameters){
     i--;     
   }
     UARTSend("AHT Time: ", 10);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend(globalCountArray, 10);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
     UARTSend("\r\n",2);
-    for(int i=0; i<1600;i++);
+    vTaskDelay(5);
   }  
   UARTSend((unsigned char*)"\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
-  for(int i=0; i<1600;i++);
    vTaskDelay(1000);
   }
   
