@@ -7,8 +7,11 @@ which resulted from "GRIDLOCK" and "<TO direction>" overlapping
 oho!
 -Thomas sux
 */
-void CurrentTrainTCB(void *vParameters)
+void CurrentTrain(void *vParameters)
 {
+  //FLAAAAG!! OMFG FLAAAG
+  CurrentTrainActive = TRUE;
+  
   xOLEDMessage headingNorth;
   headingNorth.pcMessage = "Heading: North";
   headingNorth.ulX = 10;
@@ -61,7 +64,7 @@ void CurrentTrainTCB(void *vParameters)
           
           if(toggleNorth){
             toggleNorth = TRUE;
-            noiseCount = globalCount + 10;
+            noiseCount = globalCount + 10000;
             flashCount = globalCount;
             headingNorth.brightness = 15;
           }
@@ -69,10 +72,10 @@ void CurrentTrainTCB(void *vParameters)
           if(toggleNorth) {
             //FLASH EVENTS
             //loops indefinitely (will end when train passes)
-            if((globalCount - flashCount) % 3 == 0)
+            if((globalCount - flashCount) % 3000 == 0)
               headingNorth.brightness = 15; 
             
-            if((globalCount - flashCount) % 3 == 2)
+            if((globalCount - flashCount) % 3000 == 2000)
               headingNorth.brightness = 0;
             
             xQueueSend( xOLEDQueue, &headingNorth, 0  );
@@ -81,39 +84,39 @@ void CurrentTrainTCB(void *vParameters)
             //SOUND EVENTS
 #if SOUND_ENABLE == 1
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 10))
+            if(globalCount == (noiseCount - 10000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 8))
+            if(globalCount == (noiseCount - 8000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 7))
+            if(globalCount == (noiseCount - 7000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 5))
+            if(globalCount == (noiseCount - 5000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start first short blast
-            if(globalCount == (noiseCount - 4))
+            if(globalCount == (noiseCount - 4000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait one second, then stop first short blast
-            if(globalCount == (noiseCount - 3))
+            if(globalCount == (noiseCount - 3000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second short blast
-            if(globalCount == (noiseCount - 2))
+            if(globalCount == (noiseCount - 2000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait one second, end all blasts, set bigglesOn to FALSE
-            if(globalCount == (noiseCount - 1))
+            if(globalCount == (noiseCount - 1000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             if(noiseCount == globalCount) {
-              noiseCount = globalCount + 10;
+              noiseCount = globalCount + 10000;
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             }      
             
@@ -126,9 +129,9 @@ void CurrentTrainTCB(void *vParameters)
           
           if(!toggleEast) {
             toggleEast = TRUE;
-            noiseCount = globalCount + 13;
+            noiseCount = globalCount + 13000;
             flashCount = globalCount;
-            headingEast.brightness = 15;
+            headingEast.brightness = 15000;
           }
           
           //*****FLASH EVENTS*****  
@@ -136,10 +139,10 @@ void CurrentTrainTCB(void *vParameters)
           if(toggleEast) {
             //FLASH OFF
             
-            if ((globalCount - flashCount) % 2 == 0)
+            if ((globalCount - flashCount) % 2000 == 0)
               headingEast.brightness = 15; 
             
-            if ((globalCount - flashCount) % 2 == 1)
+            if ((globalCount - flashCount) % 2000 == 1000)
               headingEast.brightness = 0;
             
             xQueueSend( xOLEDQueue, &headingEast, 0);
@@ -148,47 +151,47 @@ void CurrentTrainTCB(void *vParameters)
 #if SOUND_ENABLE == 1
             
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 13)) 
+            if(globalCount == (noiseCount - 13000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 11)) 
+            if(globalCount == (noiseCount - 11000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 10)) 
+            if(globalCount == (noiseCount - 10000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 8)) 
+            if(globalCount == (noiseCount - 8000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start first short blast
-            if(globalCount == (noiseCount - 7)) 
+            if(globalCount == (noiseCount - 7000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait one second, then stop first short blast
-            if(globalCount == (noiseCount - 5)) 
+            if(globalCount == (noiseCount - 5000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 4)) 
+            if(globalCount == (noiseCount - 4000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 3)) 
+            if(globalCount == (noiseCount - 3000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 2))
+            if(globalCount == (noiseCount - 2000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 1))
+            if(globalCount == (noiseCount - 1000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             if(noiseCount == globalCount) {
-              noiseCount = globalCount + 13;
+              noiseCount = globalCount + 13000;
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             }
             
@@ -201,17 +204,17 @@ void CurrentTrainTCB(void *vParameters)
           
           if(!toggleWest) {
             toggleWest = TRUE;
-            noiseCount = globalCount + 7;
+            noiseCount = globalCount + 7000;
             flashCount = globalCount;
             headingWest.brightness = 15;
           }
           
           //FLASH EVENTS
           if(toggleWest) {
-            if ((globalCount - flashCount) % 4 == 0)
+            if ((globalCount - flashCount) % 4000 == 0)
               headingWest.brightness = 15;
             
-            if ((globalCount - flashCount) % 4 == 2)
+            if ((globalCount - flashCount) % 4000 == 2000)
               headingWest.brightness = 0;
             
             xQueueSend( xOLEDQueue, &headingWest, 0  );
@@ -220,31 +223,31 @@ void CurrentTrainTCB(void *vParameters)
 #if SOUND_ENABLE == 1      
             
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 7))
+            if(globalCount == (noiseCount - 7000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 5))
+            if(globalCount == (noiseCount - 5000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 4))
+            if(globalCount == (noiseCount - 4000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 3))
+            if(globalCount == (noiseCount - 3000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start first short blast
-            if(globalCount == (noiseCount - 2))
+            if(globalCount == (noiseCount - 2000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait one second, then stop first short blast
-            if(globalCount == (noiseCount - 1))
+            if(globalCount == (noiseCount - 1000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);    
             
             if(noiseCount == globalCount) {
-              noiseCount = globalCount + 7;
+              noiseCount = globalCount + 7000;
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             }
 #endif
@@ -256,7 +259,7 @@ void CurrentTrainTCB(void *vParameters)
           
           if(!toggleSouth) {
             toggleSouth = TRUE;
-            noiseCount = globalCount + 12;
+            noiseCount = globalCount + 12000;
             flashCount = globalCount;
             headingSouth.brightness = 15;
           }
@@ -266,10 +269,10 @@ void CurrentTrainTCB(void *vParameters)
           if(toggleSouth) {
             //FLASH OFF
             
-            if ((globalCount - flashCount) % 2 == 0)
+            if ((globalCount - flashCount) % 2000 == 0)
               headingSouth.brightness = 15;
             
-            if ((globalCount - flashCount) % 2 == 1)
+            if ((globalCount - flashCount) % 2000 == 1000)
               headingSouth.brightness = 0;
             
             xQueueSend( xOLEDQueue, &headingSouth, 0  );
@@ -277,47 +280,47 @@ void CurrentTrainTCB(void *vParameters)
             //*****SOUND EVENTS*****
 #if SOUND_ENABLE == 1
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 12)) 
+            if(globalCount == (noiseCount - 12000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 10)) 
+            if(globalCount == (noiseCount - 10000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 9)) 
+            if(globalCount == (noiseCount - 9000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 7)) 
+            if(globalCount == (noiseCount - 7000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start first short blast
-            if(globalCount == (noiseCount - 6)) 
+            if(globalCount == (noiseCount - 6000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait one second, then stop first short blast
-            if(globalCount == (noiseCount - 5)) 
+            if(globalCount == (noiseCount - 5000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //first blast: lasts 2 seconds
-            if(globalCount == (noiseCount - 4)) 
+            if(globalCount == (noiseCount - 4000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //off time between first and second blast
-            if(globalCount == (noiseCount - 3)) 
+            if(globalCount == (noiseCount - 3000)) 
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             //wait one second, then start second blast
-            if(globalCount == (noiseCount - 2))
+            if(globalCount == (noiseCount - 2000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             
             //wait two seconds, stop second blast
-            if(globalCount == (noiseCount - 1))
+            if(globalCount == (noiseCount - 1000))
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
             
             if(noiseCount == globalCount) {
-              noiseCount = globalCount + 12;
+              noiseCount = globalCount + 12000;
               PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, TRUE);
             }
 #endif
@@ -325,19 +328,24 @@ void CurrentTrainTCB(void *vParameters)
         }    
       }
       //NOTE TO SELF: BUUUULLLSHIIIIIT
-      if(globalCount >= traversalTime) {
+     /* if(globalCount >= traversalTime) {
         PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-        currentTrainComplete = TRUE;
+        
         //static char clearSafety[16] = "               ";
         //RIT128x96x4StringDraw(clearSafety, 10, 40, 0); 
         xQueueSend( xOLEDQueue, &clearSafety, 0  );
-        
-      }
+        currentTrainComplete = TRUE;
+      }*/
       
       
     }
+    //UNFLAG?
+    CurrentTrainActive = FALSE;
     vTaskDelay(1000);
   }
+  
+  
+  
   
 }
 
