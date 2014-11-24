@@ -73,14 +73,11 @@ void Startup(void) {
   
   //STEP 7: ADC SETUP
   SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-  GPIOPinTypeGPIOInput(ADC0_BASE, GPIO_PIN_0);
-  GPIOPinTypeADC(ADC0_BASE, GPIO_PIN_0);
-  GPIOPadConfigSet(ADC0_BASE, GPIO_PIN_0, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_ANALOG);
-  ADCReferenceSet(ADC0_BASE, ADC_REF_INT);              
-  ADCResolutionSet(ADC0_BASE, ADC_RES_10BIT); 
-  ADCSequenceConfigure(ADC0_BASE, 0, ADC_TRIGGER_ALWAYS, 1);
-  ADCSequenceStepConfigure(ADC0_BASE, 0, 0, ADC_CTL_CH0);
-  ADCSequenceEnable(ADC0_BASE, 0);
-
+  GPIOPinTypeADC(ADC0_BASE, GPIO_PIN_0); 
+  ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);   
+  ADCSequenceStepConfigure(ADC0_BASE, 3, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END);
+  ADCSequenceEnable(ADC0_BASE, 3);
+  ADCIntClear(ADC0_BASE, 3);
+  
   return;
 }
