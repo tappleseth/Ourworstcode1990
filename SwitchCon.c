@@ -49,10 +49,10 @@ void SwitchControl(void *vParameters)
       //gridlock is true
       if(gridlock) {
         
-        if ((gridlockTime - globalCount) % 2000 == 0)
+        if ((gridlockTime - globalCount) % 1000 == 0)
           gridlockDisplay.brightness = 15; 
         
-        if ((gridlockTime - globalCount) % 2000 == 1000)
+        if ((gridlockTime - globalCount) % 1000 == 500)
           gridlockDisplay.brightness = 0;
         
         xQueueSend( xOLEDQueue, &gridlockDisplay, 0 ); 
@@ -75,7 +75,18 @@ void SwitchControl(void *vParameters)
           firstCycle = TRUE;
           xQueueSend( xOLEDQueue, &clearScreen, 0 ); 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
+        
+          //clear trainSize and passengerCount display things
+          
+          clearScreen.ulX = 10;
+          clearScreen.ulY = 50;
+          xQueueSend( xOLEDQueue, &clearScreen, 0 );
+          clearScreen.ulX = 10;
+          clearScreen.ulY = 60;
+          xQueueSend( xOLEDQueue, &clearScreen, 0 );
           switchConComplete = TRUE;
+          
+   
          
         }
       }
@@ -84,7 +95,7 @@ void SwitchControl(void *vParameters)
     }
     //DE FLAG
     SwitchConActive = FALSE;
-    vTaskDelay(1000);
+    vTaskDelay(500);
   }
   
   
