@@ -484,6 +484,7 @@ void ScheduleFaceCommander(void *vParameters)
     xQueueSend( xOLEDQueue, &noBrakes, 0 );
     
     //display "FIRE!" if temp>200
+    //EXCITING DYNAMIC WARNING SYSTEM!!! WOW!!!!!
     if ((brakeTemp>=200)&&(brakeTemp<225)){
       tempEmergency.brightness = 15;
       tempEmergency.pcMessage ="FIRE!    ";
