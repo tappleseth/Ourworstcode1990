@@ -151,7 +151,7 @@ void TrainCom(void *vParameters)
     } //ebd of if statement block semantics 
     
     TrainComActive = FALSE;
-    vTaskDelay(1000);
+    vTaskDelay(500);
   } //end of mosnter while(1) loop
   
 }
