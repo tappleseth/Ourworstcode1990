@@ -143,6 +143,35 @@ void SerialCom(void *vParameters){
     UARTSend("\r\n",2);
     vTaskDelay(5);
   }  
+  
+  //PRINT TEMP STUFF TO UART
+  
+  char brakeTempArray[5] = "    ";
+  unsigned int justinCrazy = (unsigned int) brakeTemp;
+   int i = 2;
+    while(justinCrazy > 0) {
+      brakeTempArray[i] = (justinCrazy%10) + 48;
+      justinCrazy = justinCrazy/10;
+      i--;     
+    }
+    brakeTempArray[3] = '\0';
+    
+    UARTSend("Temp (C): ", 10);
+    vTaskDelay(5);
+    UARTSend(brakeTempArray, 10);
+    vTaskDelay(5);
+    UARTSend("\r\n",2);
+    vTaskDelay(5);
+    if (brakeTemp>200){
+      UARTSend("FIRE!", 10);
+    }
+      
+       
+    
+    
+  
+    
+  
   UARTSend((unsigned char*)"\r\n", 2); //SPAAAAAAAAACE MAAAAAAAAAAAAAAAN AAAAASA!!! AAAAAAAAA!!! AAAAAOMGF!
    vTaskDelay(1000);
   }
