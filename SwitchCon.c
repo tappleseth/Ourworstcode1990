@@ -39,6 +39,7 @@ void SwitchControl(void *vParameters)
           gridlock = TRUE;
           gridlockTime = globalCount + (-12000*randd);
           traversalTime = 6000*(trainSize) +  gridlockTime;
+           xQueueSend( xOLEDQueue, &clearScreen, 0 ); 
         }
         //if random number is greater than 0, we have a train passing through!
         else {      
@@ -67,17 +68,22 @@ void SwitchControl(void *vParameters)
         if(globalCount >= traversalTime) {
           trainPresent = FALSE;
           
+          toggleNorth = FALSE;
+          toggleSouth = FALSE;
+          toggleWest = FALSE;
+          toggleEast = FALSE;
+          
           fromDirection = 'X';
           east = FALSE;
           north = FALSE;    
           west = FALSE;
           south = FALSE;
           firstCycle = TRUE;
+          clearScreen.ulX = 10;
+          clearScreen.ulY = 40;
           xQueueSend( xOLEDQueue, &clearScreen, 0 ); 
           PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE); //turn off sound
-        
           //clear trainSize and passengerCount display things
-          
           clearScreen.ulX = 10;
           clearScreen.ulY = 50;
           xQueueSend( xOLEDQueue, &clearScreen, 0 );
