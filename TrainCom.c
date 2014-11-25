@@ -34,40 +34,37 @@ void TrainCom(void *vParameters)
   tracksIdle.ulY = 30;
   tracksIdle.brightness = 15;
   
+  static unsigned int pickleStoat = 0;
+    
   while(1)
   {
-    
-    //static int i = 0;
-    
-   /* if(globalCount == 5000) {
-      TrainState = 1;   
-    }*/
-    
-    // i++;
+  pickleStoat = TrainState;
     
     if (fromDirection == 'X'){
       xQueueSend( xOLEDQueue, &tracksIdle, 0 );
     }
     
     //IF !trainPresent and some button was pressed, THEN generate train
-    if ((TrainState == 1 || TrainState == 2 || TrainState == 4 || TrainState == 8)&&(!trainPresent)) {
+    if ((pickleStoat == 1 || pickleStoat == 2 || pickleStoat == 4 || pickleStoat == 8)&&(!trainPresent)) {
+      
       //step 0: set trainPresent to true
       trainPresent = TRUE;
       
       //step 1: set from direction
-      if (TrainState == 1){
+      if (pickleStoat == 1){
         fromDirection = 'N';
         xQueueSend( xOLEDQueue, &fromNorth, 0 );
-        
-      } else if (TrainState == 2){
+ 
+      } if (pickleStoat == 2){
         fromDirection = 'S';
         xQueueSend( xOLEDQueue, &fromSouth, 0 );
-      }  else if (TrainState == 4){
+      }  if (pickleStoat == 4){
         fromDirection = 'W';
         xQueueSend( xOLEDQueue, &fromWest, 0 );
-      } else {
-        fromDirection = 'E';
+      } if (pickleStoat == 8) { //WTF
+        fromDirection = 'S';
         xQueueSend( xOLEDQueue, &fromEast, 0 );
+        //xQueueSend( xOLEDQueue, &fromSouth, 0 );
       }
       
       east = FALSE;
@@ -86,9 +83,14 @@ void TrainCom(void *vParameters)
         west = TRUE;
       else
         south = TRUE;
+      //north = TRUE;
+     // west = TRUE;
+      //east = TRUE;
+      //south = TRUE;
       
       // step 3: generate train size
       trainSize = randomInteger(2,9);    
+      //trainSize = 2;
       signed char numCarss[] = {48+ trainSize,'\0'};
       xOLEDMessage numCars;
       numCars.pcMessage = &numCarss;
@@ -106,7 +108,8 @@ void TrainCom(void *vParameters)
       xQueueSend( xOLEDQueue, &TrainSize, 0 );
       xQueueSend( xOLEDQueue, &numCars, 0 );
       
-      
+      TrainState = 0;
+      pickleStoat = 0;
       
       
       //step 6: do passengerCount things
@@ -141,7 +144,7 @@ void TrainCom(void *vParameters)
       xQueueSend( xOLEDQueue, &Passengers, 0 );
       
       /*CHANGE THIS MOTHER FUCKKKKKKKERSSSSSSS*/
-      TrainState = 0;
+      
       
       
       
