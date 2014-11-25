@@ -158,12 +158,12 @@ void SerialCom(void *vParameters){
     
     UARTSend("Temp (C): ", 10);
     vTaskDelay(5);
-    UARTSend(brakeTempArray, 10);
+    UARTSend(brakeTempArray, 4);
     vTaskDelay(5);
     UARTSend("\r\n",2);
     vTaskDelay(5);
     if (brakeTemp>200){
-      UARTSend("FIRE!", 10);
+      UARTSend("FIRE!", 5);
     }
       
        
