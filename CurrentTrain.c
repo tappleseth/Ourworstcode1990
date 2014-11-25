@@ -62,7 +62,7 @@ void CurrentTrain(void *vParameters)
           
           //static char northDisplay[15] = "Heading: North";
           
-          if(toggleNorth){
+          if(!toggleNorth){
             toggleNorth = TRUE;
             noiseCount = globalCount + 10000;
             flashCount = globalCount;
@@ -75,7 +75,7 @@ void CurrentTrain(void *vParameters)
             if((globalCount - flashCount) % 3000 == 0)
               headingNorth.brightness = 15; 
             
-            if((globalCount - flashCount) % 3000 == 2000)
+            if((globalCount - flashCount) % 3000 == 1500)
               headingNorth.brightness = 0;
             
             xQueueSend( xOLEDQueue, &headingNorth, 0  );
@@ -124,14 +124,14 @@ void CurrentTrain(void *vParameters)
           }
         }
         
-        else if(east) {
+        if(east) {
           // static char eastDisplay[14] = "Heading: East";
           
           if(!toggleEast) {
             toggleEast = TRUE;
             noiseCount = globalCount + 13000;
             flashCount = globalCount;
-            headingEast.brightness = 15000;
+            headingEast.brightness = 15;
           }
           
           //*****FLASH EVENTS*****  
@@ -199,7 +199,7 @@ void CurrentTrain(void *vParameters)
           }
         }
         
-        else if(west) {
+         if(west) {
           //static char westDisplay[14] = "Heading: West";
           
           if(!toggleWest) {
@@ -254,7 +254,7 @@ void CurrentTrain(void *vParameters)
           }
         } 
         
-        else {
+        if (south) {
           //static char southDisplay[15] = "Heading: South";
           
           if(!toggleSouth) {
@@ -327,21 +327,11 @@ void CurrentTrain(void *vParameters)
           }   
         }    
       }
-      //NOTE TO SELF: BUUUULLLSHIIIIIT
-     /* if(globalCount >= traversalTime) {
-        PWMOutputState(PWM0_BASE, PWM_OUT_1_BIT, FALSE);
-        
-        //static char clearSafety[16] = "               ";
-        //RIT128x96x4StringDraw(clearSafety, 10, 40, 0); 
-        xQueueSend( xOLEDQueue, &clearSafety, 0  );
-        currentTrainComplete = TRUE;
-      }*/
-      
       
     }
     //UNFLAG?
     CurrentTrainActive = FALSE;
-    vTaskDelay(1000);
+    vTaskDelay(500);
   }
   
   
