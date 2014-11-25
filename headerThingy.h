@@ -19,6 +19,8 @@
 #include "C:\StellarisWare\driverlib\pwm.h"
 #include "C:\StellarisWare\driverlib\interrupt.h"
 #include "C:\StellarisWare\driverlib\uart.h"
+#include "C:\StellarisWare\driverlib\adc.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -65,6 +67,9 @@ extern unsigned int TimerState;
 extern unsigned int TrainState;
 extern int seed;
 
+extern unsigned long brakeTemp;
+extern bool brakeHighTemp;
+
 extern xQueueHandle xOLEDQueue;
 
 //FUNCTION PROTOTYPES
@@ -79,6 +84,7 @@ extern  xTaskHandle vSwitchCon;
 extern  xTaskHandle vCurrentTrain;
 extern  xTaskHandle vSerialCom;
 extern  xTaskHandle vSchedule;
+extern xTaskHandle vBrakeTemp;
 //extern int getStackSize(void);
 //extern void popFromStack(void);
 //extern void Schedule(void);
@@ -96,6 +102,7 @@ extern void IntGPIOf(void);
 extern void UARTIntHandler(void);
 extern void UARTSend(const unsigned char *pucBuffer, unsigned long ulCount);
 
+extern void BrakeTemp(void *vParameters);
 extern void pin(bool);
 //END FUNCTION PROTOTYPES
 
