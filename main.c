@@ -124,7 +124,7 @@ tick hook.
 #define mainBASIC_WEB_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 10 )
 
 // The OLED task uses the sprintf function so requires a little more stack too.
-#define mainOLED_TASK_STACK_SIZE	    ( configMINIMAL_STACK_SIZE + 120 )
+#define mainOLED_TASK_STACK_SIZE	    ( configMINIMAL_STACK_SIZE + 512 )
 
 //  Task priorities.
 #define mainQUEUE_POLL_PRIORITY		    ( tskIDLE_PRIORITY + 2 )
@@ -153,9 +153,9 @@ the jitter time in nano seconds.
 // Constants used when writing strings to the display.
 
 #define mainCHARACTER_HEIGHT		    ( 9 )
-#define mainMAX_ROWS_128		    ( mainCHARACTER_HEIGHT * 14 )
-#define mainMAX_ROWS_96			    ( mainCHARACTER_HEIGHT * 10 )
-#define mainMAX_ROWS_64			    ( mainCHARACTER_HEIGHT * 7 )
+#define mainMAX_ROWS_128		    ( mainCHARACTER_HEIGHT * 20 )
+#define mainMAX_ROWS_96			    ( mainCHARACTER_HEIGHT * 20 )
+#define mainMAX_ROWS_64			    ( mainCHARACTER_HEIGHT * 20 )
 #define mainFULL_SCALE			    ( 15 )
 #define ulSSI_FREQUENCY			    ( 3500000UL )
 
@@ -396,7 +396,7 @@ void ScheduleFaceCommander(void *vParameters)
   noBrakes.brightness = 10;
   
   xOLEDMessage tempEmergency;
-  tempEmergency.pcMessage = "FIRE!";
+  tempEmergency.pcMessage = "FIRE!     ";
   tempEmergency.ulX = 85;
   tempEmergency.ulY = 75;
   tempEmergency.brightness = 15;
@@ -484,8 +484,37 @@ void ScheduleFaceCommander(void *vParameters)
     xQueueSend( xOLEDQueue, &noBrakes, 0 );
     
     //display "FIRE!" if temp>200
-    if (brakeTemp>200)tempEmergency.brightness = 15;
-    else tempEmergency.brightness = 0;
+    if ((brakeTemp>=200)&&(brakeTemp<225)){
+      tempEmergency.brightness = 15;
+      tempEmergency.pcMessage ="FIRE!    ";
+    }
+    if ((brakeTemp>=225)&&(brakeTemp<250)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="FIRE!!   ";
+    } 
+    if ((brakeTemp>=250)&&(brakeTemp<275)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="FIRE!!!  ";
+    }
+    if ((brakeTemp>=275)&&(brakeTemp<300)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="AA!      ";
+    }
+    if ((brakeTemp>=300)&&(brakeTemp<315)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="AAA!   ";
+    }
+    if ((brakeTemp>=315)&&(brakeTemp<325)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="AAAA!!  ";
+    }
+    if ((brakeTemp>=325)&&(brakeTemp<350)){
+      tempEmergency.brightness=15;
+      tempEmergency.pcMessage ="AAAAA!!! ";
+    }
+    
+    if (brakeTemp < 200) tempEmergency.brightness = 0;
+      
     
     xQueueSend( xOLEDQueue, &tempEmergency, 0);
     
@@ -598,9 +627,9 @@ void prvSetupHardware( void )
   LED1        Bit 2   Output 
   */
   
-  SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
+  /*SysCtlPeripheralEnable( SYSCTL_PERIPH_GPIOF );
   GPIODirModeSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3), GPIO_DIR_MODE_HW );
-  GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );
+  GPIOPadConfigSet( GPIO_PORTF_BASE, (GPIO_PIN_2 | GPIO_PIN_3 ), GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD );*/
   
   
 }
@@ -644,10 +673,10 @@ void pin(bool status) {
 void IntGPIOe(void)
 {
   //Clear the interrupt to avoid continuously looping here
-  GPIOPinIntClear(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
+  GPIOPinIntClear(GPIO_PORTE_BASE,0xF );
   
   //Set the Event State for GPIO pin 0
-  TrainState=GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2| GPIO_PIN_3 );
+  TrainState=GPIOPinRead(GPIO_PORTE_BASE, 0xF );
   
   //Switches are normally-high, so flip the polarity of the results:
   TrainState=TrainState^0xF;  //You should work out why and how this works!
