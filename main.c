@@ -121,10 +121,10 @@ tick hook.
 #define mainCHECK_DELAY	( ( portTickType ) 5000 / portTICK_RATE_MS )
 
 // Size of the stack allocated to the uIP task.
-#define mainBASIC_WEB_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 3 )
+#define mainBASIC_WEB_STACK_SIZE            ( configMINIMAL_STACK_SIZE * 10 )
 
 // The OLED task uses the sprintf function so requires a little more stack too.
-#define mainOLED_TASK_STACK_SIZE	    ( configMINIMAL_STACK_SIZE + 50 )
+#define mainOLED_TASK_STACK_SIZE	    ( configMINIMAL_STACK_SIZE + 120 )
 
 //  Task priorities.
 #define mainQUEUE_POLL_PRIORITY		    ( tskIDLE_PRIORITY + 2 )
@@ -242,6 +242,8 @@ unsigned int TimerState = 0;
 unsigned int TrainState = 0;
 int seed = 1;
 
+unsigned long brakeTemp = 0;
+bool brakeHighTemp = FALSE;
 /*END GLOBAL VARIABLES*/
 
 /*-----------------------------------------------------------*/
@@ -266,6 +268,7 @@ xTaskHandle vSwitchCon;
 xTaskHandle vCurrentTrain;
 xTaskHandle vSerialCom;
 xTaskHandle vSchedule;
+xTaskHandle vBrakeTemp;
 
 int main( void )
 {
@@ -310,8 +313,9 @@ int main( void )
   xTaskCreate(TrainCom, "TrainCom", 256, NULL, 2, &vTrainCom);
   xTaskCreate(SwitchControl, "SwitchControl",256,NULL, 2, &vSwitchCon);
   xTaskCreate(CurrentTrain,"CurrentTrain",256,NULL,2,&vCurrentTrain);
-  //xTaskCreate(SerialCom,"SerialCom",256,NULL,2,&vSerialCom);
+  xTaskCreate(SerialCom,"SerialCom",256,NULL,2,&vSerialCom);
   xTaskCreate(ScheduleFaceCommander,"ScheduleFaceCommander",256,NULL,1,&vSchedule);
+  xTaskCreate(BrakeTemp,"BrakeTemp",256,NULL,2,&vBrakeTemp);
   vTaskSuspend(vSwitchCon);
   vTaskSuspend(vCurrentTrain);
   
@@ -346,19 +350,21 @@ void ScheduleFaceCommander(void *vParameters)
 {
   xOLEDMessage xMessage;
   xMessage.ulX = 60;
-  xMessage.ulY = 80;
+  xMessage.ulY = 85;
   xMessage.brightness = 15;
   static unsigned int justinCrazy = 0;
   volatile unsigned long ul;  
   const char *T1Text = "Task 3 is running\n\r";
+  
   char globalCountArray[10] = "          ";
+  
   //xMessage.pcMessage = "Bon Jour, Task 3";
   int i;
   
   xOLEDMessage timeTitle;
   timeTitle.pcMessage = "Time: ";
   timeTitle.ulX = 10;
-  timeTitle.ulY = 80;
+  timeTitle.ulY = 85;
   timeTitle.brightness = 10;
   xQueueSend( xOLEDQueue, &timeTitle, 0 );
   xOLEDMessage flair1;
@@ -376,7 +382,26 @@ void ScheduleFaceCommander(void *vParameters)
   xQueueSend( xOLEDQueue, &flair1, 0 );
   xQueueSend( xOLEDQueue, &flair2, 0 );
   
-  xOLEDMessage xTCC;
+  xOLEDMessage tempTitle;
+  tempTitle.pcMessage = "Temp(C): ";
+  tempTitle.ulX = 10;
+  tempTitle.ulY = 75;
+  tempTitle.brightness = 12;
+  
+  xQueueSend( xOLEDQueue, &tempTitle, 0 );
+  
+  xOLEDMessage noBrakes;
+  noBrakes.ulX = 60;
+  noBrakes.ulY = 75;
+  noBrakes.brightness = 10;
+  
+  xOLEDMessage tempEmergency;
+  tempEmergency.pcMessage = "FIRE!";
+  tempEmergency.ulX = 85;
+  tempEmergency.ulY = 75;
+  tempEmergency.brightness = 15;
+
+ /* xOLEDMessage xTCC;
   xTCC.pcMessage = "TCC";
   xTCC.ulX = 10;
   xTCC.ulY = 90;
@@ -392,12 +417,7 @@ void ScheduleFaceCommander(void *vParameters)
   xCCC.pcMessage = "             CCC";
   xCCC.ulX = 10;
   xCCC.ulY = 90;
-  xCCC.brightness = 15;
-  
-  
-  
-  //build initial stack
-  
+  xCCC.brightness = 15;*/   
   
   while(1)
   {
@@ -423,6 +443,8 @@ void ScheduleFaceCommander(void *vParameters)
     //get number of ticks
     globalCount = (unsigned int) xTaskGetTickCount();
     
+    
+    
     //convert current time to a char array format
     justinCrazy = globalCount/1000;
     i = 8;
@@ -433,12 +455,51 @@ void ScheduleFaceCommander(void *vParameters)
     }
     globalCountArray[9] = '\0';
     
+    //convert break temperature to a char array format
+    //justinCrazy pulls double duty here
+    char brakeTempArray[4] = "    ";
+    justinCrazy = (unsigned int) brakeTemp;
+    i = 2;
+    while(justinCrazy > 0) {
+      brakeTempArray[i] = (justinCrazy%10) + 48;
+      justinCrazy = justinCrazy/10;
+      i--;     
+    }
+    brakeTempArray[3] = '\0';
+    if (brakeTemp < 4){
+      brakeTempArray[0] = 32;
+      brakeTempArray[1] = 32;
+      brakeTempArray[2] = 48;
+      brakeTempArray[3] = '\0';
+    }
+    
+    //brightness of break temp increases as temp increases
+    noBrakes.pcMessage = brakeTempArray;
+    if ((brakeTemp >= 50)&&(brakeTemp<75)) noBrakes.brightness = 11;
+    if ((brakeTemp >= 75)&&(brakeTemp<100)) noBrakes.brightness = 12;
+    if ((brakeTemp >= 100)&&(brakeTemp<125)) noBrakes.brightness = 13;
+    if ((brakeTemp >= 125)&&(brakeTemp<150)) noBrakes.brightness = 14;
+    if ((brakeTemp >= 150)&&(brakeTemp<200)) noBrakes.brightness = 15;
+    
+    xQueueSend( xOLEDQueue, &noBrakes, 0 );
+    
+    //display "FIRE!" if temp>200
+    if (brakeTemp>200)tempEmergency.brightness = 15;
+    else tempEmergency.brightness = 0;
+    
+    xQueueSend( xOLEDQueue, &tempEmergency, 0);
+    
+    
+    
+    frequencyCount = tempCount;
+    tempCount = 0;
+    
     xMessage.pcMessage = globalCountArray;
     
     // Send the message to the OLED gatekeeper for display. 
     xQueueSend( xOLEDQueue, &xMessage, 0 );
     //RIT128x96x4StringDraw(globalCountArray,10,10,15);
-    vTaskDelay(1000);
+    vTaskDelay(500);
   }
 }
 
@@ -569,7 +630,7 @@ void IntGPIOf(void)
 {
   //Clear the interrupt to avoid continuously looping here
   GPIOPinIntClear(GPIO_PORTF_BASE, GPIO_PIN_3);
-  tempCount++;
+  tempCount+=2;
 }
 
 void pin(bool status) {
